@@ -1,171 +1,243 @@
-export function renderSoftwareGrid(items, onDelete, isAdmin) {
-    if (!document.getElementById("sw-grid-styles")) {
-        const style = document.createElement("style");
-        style.id = "sw-grid-styles";
-        style.textContent = `
-            .sw-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 1.5rem;
-            }
+export function renderSoftwareGrid(items, categories, onDelete, isAdmin) {
+  if (!document.getElementById('sw-grid-styles')) {
+    const style = document.createElement('style');
+    style.id = 'sw-grid-styles';
+    style.textContent = `
+      .vault-accordion-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+      }
+      .vault-category {
+        border-radius: 0.5rem;
+        overflow: hidden;
+        border: 1px solid rgba(72,72,71,0.2);
+      }
+      .vault-category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 22px;
+        cursor: pointer;
+        background: #131313;
+        user-select: none;
+        transition: background 0.2s ease;
+      }
+      .vault-category-header:hover { background: #1a1a1a; }
+      .vault-category-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #99f7ff;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .vault-chevron {
+        font-family: 'Material Symbols Outlined';
+        font-size: 22px;
+        color: #99f7ff;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .vault-category.open .vault-chevron { transform: rotate(90deg); }
+      .vault-badge {
+        font-size: 0.75rem;
+        background: rgba(153, 247, 255, 0.08);
+        border: 1px solid rgba(153,247,255,0.2);
+        padding: 3px 10px;
+        border-radius: 9999px;
+        color: #99f7ff;
+        font-family: monospace;
+        letter-spacing: 0.05em;
+      }
+      .vault-items-drawer {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        background: #0e0e0e;
+      }
+      .vault-category.open .vault-items-drawer { grid-template-rows: 1fr; }
+      .vault-drawer-inner { min-height: 0; }
+      .vault-software-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 22px 14px 48px;
+        border-top: 1px solid rgba(72,72,71,0.1);
+        border-left: 2px solid transparent;
+        transition: all 0.2s ease;
+      }
+      .vault-software-row:hover {
+        background: rgba(153, 247, 255, 0.03);
+        border-left-color: #99f7ff;
+      }
+      .vault-software-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .vault-dot {
+        width: 5px;
+        height: 5px;
+        background: #99f7ff;
+        border-radius: 50%;
+        box-shadow: 0 0 6px #99f7ff;
+        flex-shrink: 0;
+      }
+      .vault-software-name {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+      }
+      .vault-software-version {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #adaaaa;
+      }
+      .vault-actions { display: flex; gap: 6px; }
+      .vault-btn {
+        background: transparent;
+        border: 1px solid rgba(72,72,71,0.4);
+        color: #adaaaa;
+        cursor: pointer;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+      .vault-btn:hover { border-color: #99f7ff; color: #99f7ff; }
+      .vault-btn-delete:hover { border-color: #ff716c; color: #ff716c; }
+      .vault-btn span {
+        font-family: 'Material Symbols Outlined';
+        font-size: 16px;
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .vault-empty {
+        padding: 14px 36px;
+        font-style: italic;
+        color: #484847;
+        font-size: 0.8rem;
+        border-top: 1px solid rgba(72,72,71,0.1);
+        font-family: 'Inter', sans-serif;
+      }
 
-            .sw-card {
-                display: flex;
-                flex-direction: column;
-                border: 1px solid var(--border);
-                background-color: var(--surface);
-                border-radius: 8px;
-                padding: 1.5rem;
-                transition: border-color 0.2s, box-shadow 0.2s;
-                overflow: hidden;
-            }
+      @media (max-width: 640px) {
+        .vault-category-header { padding: 12px 14px; }
+        .vault-category-title { font-size: 0.75rem; }
+        .vault-software-row { padding-left: 20px; }
+        .vault-software-name { font-size: 0.775rem; }
+        .vault-btn { width: 36px; height: 36px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-            .sw-card:hover {
-                border-color: var(--neon-cyan);
-                box-shadow: 0 0 12px rgba(0,255,240,0.15);
-            }
+  const container = document.createElement('div');
+  container.className = 'vault-accordion-container';
 
-            .sw-card-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 0.75rem;
-            }
+  categories.forEach(category => {
+    const categoryItems = items.filter(item => item.category === category);
 
-            .sw-card h3 {
-                font-family: 'Orbitron', sans-serif;
-                color: var(--neon-cyan);
-                margin: 0;
-                font-size: 1.1rem;
-                line-height: 1.3;
-                word-break: break-word;
-            }
+    const catSection = document.createElement('div');
+    catSection.className = 'vault-category';
 
-            .sw-card .badge {
-                background-color: rgba(0,255,240,0.1);
-                color: var(--neon-cyan);
-                border: 1px solid var(--neon-cyan);
-                border-radius: 4px;
-                padding: 2px 8px;
-                font-size: 0.7rem;
-                text-transform: uppercase;
-                white-space: nowrap;
-                margin-left: 1rem;
-            }
+    const header = document.createElement('div');
+    header.className = 'vault-category-header';
+    header.addEventListener('click', () => catSection.classList.toggle('open'));
 
-            .sw-card p {
-                color: var(--text-muted);
-                font-size: 0.9rem;
-                margin: 0.75rem 0;
-                line-height: 1.5;
-            }
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'vault-category-title';
+    const chevron = document.createElement('span');
+    chevron.className = 'vault-chevron';
+    chevron.textContent = 'chevron_right';
+    const titleText = document.createElement('span');
+    titleText.textContent = category;
+    titleDiv.appendChild(chevron);
+    titleDiv.appendChild(titleText);
 
-            .sw-card-footer {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                margin-top: auto;
-                padding-top: 1rem;
-                border-top: 1px dashed var(--border);
-            }
+    const badge = document.createElement('div');
+    badge.className = 'vault-badge';
+    badge.textContent = `${categoryItems.length} item${categoryItems.length !== 1 ? 's' : ''}`;
 
-            .sw-card .version {
-                font-family: 'Fira Code', monospace;
-                color: var(--text-muted);
-                font-size: 0.85rem;
-            }
+    header.appendChild(titleDiv);
+    header.appendChild(badge);
 
-            .sw-card .download-btn {
-                background-color: var(--neon-cyan);
-                color: var(--bg);
-                font-weight: bold;
-                padding: 0.4rem 1rem;
-                border-radius: 4px;
-                text-decoration: none;
-                font-family: 'Fira Code', monospace;
-                white-space: nowrap;
-                font-size: 0.85rem;
-                transition: background-color 0.2s, box-shadow 0.2s;
-            }
+    const drawer = document.createElement('div');
+    drawer.className = 'vault-items-drawer';
+    const inner = document.createElement('div');
+    inner.className = 'vault-drawer-inner';
 
-            .sw-card .download-btn:hover {
-                background-color: #00e6d6;
-                box-shadow: 0 0 8px rgba(0,255,240,0.4);
-            }
+    if (categoryItems.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'vault-empty';
+      empty.textContent = 'No software registered.';
+      inner.appendChild(empty);
+    } else {
+      categoryItems.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'vault-software-row';
 
-            .sw-card .delete-btn {
-                color: var(--danger);
-                border: 1px solid var(--danger);
-                background-color: transparent;
-                padding: 0.25rem 0.6rem;
-                border-radius: 4px;
-                cursor: pointer;
-                font-family: 'Fira Code', monospace;
-                font-size: 0.8rem;
-                margin-left: auto;
-                transition: background-color 0.2s, color 0.2s;
-            }
-
-            .sw-card .delete-btn:hover {
-                background-color: var(--danger);
-                color: var(--bg);
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    const grid = document.createElement("div");
-    grid.className = "sw-grid";
-
-    items.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "sw-card";
-
-        const header = document.createElement("div");
-        header.className = "sw-card-header";
-
-        const name = document.createElement("h3");
+        const info = document.createElement('div');
+        info.className = 'vault-software-info';
+        const dot = document.createElement('div');
+        dot.className = 'vault-dot';
+        const name = document.createElement('span');
+        name.className = 'vault-software-name';
         name.textContent = item.name;
-        header.appendChild(name);
+        const version = document.createElement('span');
+        version.className = 'vault-software-version';
+        version.textContent = item.version || '';
+        info.appendChild(dot);
+        info.appendChild(name);
+        info.appendChild(version);
 
-        const category = document.createElement("span");
-        category.className = "badge";
-        category.textContent = item.category;
-        header.appendChild(category);
+        const actions = document.createElement('div');
+        actions.className = 'vault-actions';
 
-        card.appendChild(header);
-
-        const description = document.createElement("p");
-        description.textContent = item.description;
-        card.appendChild(description);
-
-        const footer = document.createElement("div");
-        footer.className = "sw-card-footer";
-
-        const version = document.createElement("span");
-        version.className = "version";
-        version.textContent = `v${item.version}`;
-        footer.appendChild(version);
-
-        const downloadLink = document.createElement("a");
-        downloadLink.className = "download-btn";
-        downloadLink.href = item.url;
-        downloadLink.target = "_blank";
-        downloadLink.rel = "noopener noreferrer";
-        downloadLink.textContent = "[ DOWNLOAD ]";
-        footer.appendChild(downloadLink);
+        const dlBtn = document.createElement('a');
+        dlBtn.href = item.url;
+        dlBtn.target = '_blank';
+        dlBtn.rel = 'noopener noreferrer';
+        dlBtn.className = 'vault-btn';
+        dlBtn.title = 'Download';
+        const dlIcon = document.createElement('span');
+        dlIcon.textContent = 'download';
+        dlBtn.appendChild(dlIcon);
+        actions.appendChild(dlBtn);
 
         if (isAdmin) {
-            const deleteButton = document.createElement("button");
-            deleteButton.className = "delete-btn";
-            deleteButton.textContent = "[ DEL ]";
-            deleteButton.addEventListener("click", () => onDelete(item.id));
-            footer.appendChild(deleteButton);
+          const delBtn = document.createElement('button');
+          delBtn.className = 'vault-btn vault-btn-delete';
+          delBtn.title = 'Delete';
+          const delIcon = document.createElement('span');
+          delIcon.textContent = 'delete';
+          delBtn.appendChild(delIcon);
+          delBtn.addEventListener('click', () => onDelete(item.id));
+          actions.appendChild(delBtn);
         }
 
-        card.appendChild(footer);
-        grid.appendChild(card);
-    });
+        row.appendChild(info);
+        row.appendChild(actions);
+        inner.appendChild(row);
+      });
+    }
 
-    return grid;
+    drawer.appendChild(inner);
+    catSection.appendChild(header);
+    catSection.appendChild(drawer);
+    container.appendChild(catSection);
+  });
+
+  return container;
 }

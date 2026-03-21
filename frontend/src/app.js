@@ -1,11 +1,10 @@
 import { renderSoftwareGrid } from "./components/SoftwareGrid.js";
-import { renderCategoryFilter } from "./components/CategoryFilter.js";
 import { renderLoginModal } from "./components/LoginModal.js";
 import { renderAdminPanel } from "./components/AdminPanel.js";
+import { showConfirm } from "./components/ConfirmModal.js";
 
 let allSoftware = [];
 let categories = [];
-let activeCategory = "All";
 let authToken = sessionStorage.getItem("sw_token") || null;
 let isLoggedIn = !!authToken;
 let adminPanelInstance = null;
@@ -25,7 +24,24 @@ async function loadData() {
   }
 }
 
+function getOpenCategories() {
+  return new Set(
+    [...document.querySelectorAll('.vault-category.open')]
+      .map(el => el.querySelector('.vault-category-title span:last-child')?.textContent?.trim())
+      .filter(Boolean)
+  );
+}
+
+function restoreOpenCategories(openSet) {
+  if (!openSet.size) return;
+  document.querySelectorAll('.vault-category').forEach(el => {
+    const name = el.querySelector('.vault-category-title span:last-child')?.textContent?.trim();
+    if (name && openSet.has(name)) el.classList.add('open');
+  });
+}
+
 function render() {
+  const openCategories = getOpenCategories();
   const root = document.getElementById("app");
   root.innerHTML = "";
 
@@ -35,23 +51,14 @@ function render() {
   }
 
   if (isLoggedIn) {
-    adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory);
+    adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete);
     root.appendChild(adminPanelInstance.element);
+    root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, true));
   } else {
     adminPanelInstance = null;
+    root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, false));
   }
-
-  root.appendChild(renderCategoryFilter(categories, activeCategory, onCategorySelect));
-
-  const filtered = activeCategory === "All"
-    ? allSoftware
-    : allSoftware.filter(s => s.category === activeCategory);
-  root.appendChild(renderSoftwareGrid(filtered, onDelete, isLoggedIn));
-}
-
-function onCategorySelect(cat) {
-  activeCategory = cat;
-  render();
+  restoreOpenCategories(openCategories);
 }
 
 function showLoginModal() {
@@ -100,19 +107,24 @@ async function onAdd(data) {
 }
 
 async function onDelete(id) {
-  if (!confirm("// CONFIRM: Delete this software entry?")) return;
-  const res = await fetch("/api/software/" + id, {
-    method: "DELETE",
-    headers: { "Authorization": "Bearer " + authToken }
+  showConfirm({
+    title: 'Delete Software',
+    message: 'This entry will be permanently removed from the registry. This action cannot be undone.',
+    confirmText: 'DELETE',
+    onConfirm: async () => {
+      const res = await fetch("/api/software/" + id, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + authToken }
+      });
+      if (res.status === 200) {
+        await loadData();
+        render();
+      } else if (res.status === 401) {
+        alert("// SESSION EXPIRED");
+        logout();
+      }
+    }
   });
-
-  if (res.status === 200) {
-    await loadData();
-    render();
-  } else if (res.status === 401) {
-    alert("// SESSION EXPIRED");
-    logout();
-  }
 }
 
 async function onAddCategory(name) {
@@ -137,19 +149,24 @@ async function onAddCategory(name) {
 }
 
 async function onDeleteCategory(name) {
-  if (!confirm(`// CONFIRM: Delete category "${name}"?`)) return;
-  const res = await fetch(`/api/categories/${encodeURIComponent(name)}`, {
-    method: "DELETE",
-    headers: { "Authorization": "Bearer " + authToken }
+  showConfirm({
+    title: 'Delete Category',
+    message: `Category "<strong style="color:#fff">${name}</strong>" will be permanently deleted. All software in this category will lose their category assignment.`,
+    confirmText: 'DELETE',
+    onConfirm: async () => {
+      const res = await fetch(`/api/categories/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + authToken }
+      });
+      if (res.status === 200) {
+        await loadData();
+        render();
+      } else if (res.status === 401) {
+        alert("// SESSION EXPIRED");
+        logout();
+      }
+    }
   });
-
-  if (res.status === 200) {
-    await loadData();
-    render();
-  } else if (res.status === 401) {
-    alert("// SESSION EXPIRED");
-    logout();
-  }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

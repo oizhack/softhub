@@ -1,153 +1,131 @@
 export function renderLoginModal(onLogin, onClose) {
-    const existingModal = document.getElementById("login-modal");
-    if (existingModal) {
-        existingModal.remove();
-        document.getElementById("modal-styles")?.remove();
+  const existingModal = document.getElementById("login-modal");
+  if (existingModal) existingModal.remove();
+  document.getElementById("modal-styles")?.remove();
+
+  const style = document.createElement("style");
+  style.id = "modal-styles";
+  style.textContent = `
+    @keyframes modalPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.95); }
+    }
+    .kinetic-pulse { animation: modalPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .login-input:focus { box-shadow: 0 0 12px rgba(153,247,255,0.2); outline: none; }
+    .submit-btn-inner { transition: background 0.3s ease; }
+    .submit-btn-outer:hover .submit-btn-inner { background: transparent !important; }
+  `;
+  document.head.appendChild(style);
+
+  const overlay = document.createElement("div");
+  overlay.id = "login-modal";
+  overlay.className = "fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4";
+
+  overlay.innerHTML = `
+    <div class="max-w-md w-full bg-[#131313] p-[1px] rounded-xl relative overflow-hidden" style="box-shadow: 0 0 20px rgba(153,247,255,0.1);">
+      <div class="absolute inset-0 rounded-xl pointer-events-none" style="background: linear-gradient(135deg, rgba(153,247,255,0.2), transparent, rgba(153,247,255,0.05));"></div>
+
+      <div class="bg-[#1a1a1a] rounded-[calc(0.75rem-1px)] p-10 relative">
+        <button id="close-modal-btn" class="absolute top-3 right-3 bg-transparent border-none text-[#adaaaa] hover:text-[#99f7ff] cursor-pointer text-2xl transition-colors leading-none" style="line-height:1;">
+          <span class="material-symbols-outlined" style="font-size:1.5rem;">close</span>
+        </button>
+
+        <div class="flex items-center gap-3 mb-4">
+          <div style="height:2px;width:2rem;background:#99f7ff;flex-shrink:0;"></div>
+          <span style="font-size:10px;letter-spacing:0.2em;color:#99f7ff;font-weight:700;text-transform:uppercase;">Security Protocol</span>
+        </div>
+
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:2.25rem;font-weight:900;letter-spacing:-0.04em;color:#fff;margin-bottom:0.5rem;">ADMIN_LOGIN</h2>
+        <p style="font-family:'Inter',sans-serif;font-size:0.875rem;color:#adaaaa;margin-bottom:2rem;">Authorize credentials to access the management layer.</p>
+
+        <form id="login-form">
+          <div style="margin-bottom:1.5rem;">
+            <label style="font-size:10px;letter-spacing:0.2em;color:#adaaaa;display:block;margin-bottom:0.5rem;margin-left:0.25rem;font-weight:700;text-transform:uppercase;">ACCESS_KEY</label>
+            <div style="position:relative;">
+              <span class="material-symbols-outlined" style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#adaaaa;font-size:18px;pointer-events:none;">lock</span>
+              <input
+                type="password"
+                id="password-input"
+                required
+                class="login-input"
+                style="background:#000;border:none;font-family:'Inter',sans-serif;width:100%;padding:1rem 1rem 1rem 3rem;border-radius:0.25rem;color:#fff;transition:all 0.3s;"
+                placeholder="••••••••••••"
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn-outer" style="width:100%;background:linear-gradient(to right,#99f7ff,#00f1fe);padding:1px;border-radius:0.375rem;border:none;cursor:pointer;display:block;">
+            <div class="submit-btn-inner" style="background:#1a1a1a;padding:1rem 1.5rem;border-radius:calc(0.375rem - 1px);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:0.1em;color:#fff;font-size:0.875rem;">ESTABLISH CONNECTION</span>
+              <span class="material-symbols-outlined" style="color:#99f7ff;">arrow_forward</span>
+            </div>
+          </button>
+
+          <div id="login-error" style="display:none;color:#ff716c;font-size:0.85rem;text-align:center;margin-top:0.75rem;"></div>
+        </form>
+
+        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;padding:0.75rem;background:#131313;border-radius:0.375rem;border-left:2px solid #99f7ff;margin-top:2rem;">
+          <div class="kinetic-pulse" style="width:8px;height:8px;background:#99f7ff;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:9px;letter-spacing:0.3em;color:#adaaaa;font-weight:700;text-transform:uppercase;">System Status: Awaiting Input</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const form = overlay.querySelector("#login-form");
+  const input = overlay.querySelector("#password-input");
+  const errorEl = overlay.querySelector("#login-error");
+
+  const handleClose = () => {
+    document.removeEventListener("keydown", handleEscape);
+    overlay.remove();
+    document.getElementById("modal-styles")?.remove();
+    onClose();
+  };
+
+  const handleEscape = (e) => {
+    if (e.key === "Escape") handleClose();
+  };
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) handleClose();
+  });
+
+  overlay.querySelector("#close-modal-btn").addEventListener("click", handleClose);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.style.display = "none";
+    const password = input.value;
+
+    if (!password) {
+      errorEl.textContent = "// PASSWORD REQUIRED";
+      errorEl.style.display = "block";
+      return;
     }
 
-    const style = document.createElement("style");
-    style.id = "modal-styles";
-    style.textContent = `
-        .login-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex; justify-content: center; align-items: center; z-index: 100;
-        }
-        .login-modal-content {
-            background-color: var(--surface); border: 1px solid var(--border);
-            padding: 2rem; border-radius: 8px; width: 90%; max-width: 400px;
-            box-shadow: 0 0 20px rgba(0,255,240,0.08);
-            position: relative;
-        }
-        .login-modal-content h2 {
-            font-family: 'Orbitron', sans-serif; color: var(--neon-cyan);
-            margin-bottom: 1.5rem; text-align: center;
-            text-shadow: 0 0 5px rgba(0,255,240,0.2);
-        }
-        .login-modal-content label {
-            display: block; margin-bottom: 0.5rem; color: var(--text);
-            font-size: 0.9rem;
-        }
-        .login-modal-content input[type="password"] {
-            width: 100%; padding: 0.8rem; margin-bottom: 1rem;
-            background-color: var(--bg); border: 1px solid var(--border);
-            color: var(--text); border-radius: 4px; font-family: 'Fira Code', monospace;
-            font-size: 0.9rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .login-modal-content input[type="password"]:focus {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 8px rgba(0,255,240,0.1);
-        }
-        .login-modal-content button.submit-btn {
-            width: 100%; padding: 0.8rem; background-color: var(--neon-cyan);
-            color: var(--bg); border: none; border-radius: 4px;
-            font-family: 'Fira Code', monospace; font-size: 1rem; cursor: pointer;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
-            margin-top: 1rem;
-        }
-        .login-modal-content button.submit-btn:hover {
-            background-color: #00e6d6;
-            box-shadow: 0 0 10px rgba(0,255,240,0.25);
-        }
-        .login-modal-content .error-message {
-            color: var(--danger); text-align: center; margin-top: 1rem;
-            font-size: 0.85rem;
-        }
-        .login-modal-content .close-btn {
-            position: absolute; top: 10px; right: 10px;
-            background: transparent; color: var(--text-muted);
-            font-size: 1.5rem; border: none; cursor: pointer;
-            line-height: 1; padding: 0 5px;
-        }
-        .login-modal-content .close-btn:hover {
-            color: var(--neon-cyan);
-        }
-    `;
-    document.head.appendChild(style);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
 
-    const overlay = document.createElement("div");
-    overlay.className = "login-modal-overlay";
-    overlay.id = "login-modal";
+      if (res.ok) {
+        const data = await res.json();
+        onLogin(data.token);
+        handleClose();
+      } else {
+        errorEl.textContent = res.status === 401 ? "// INVALID CREDENTIALS" : "// LOGIN FAILED";
+        errorEl.style.display = "block";
+      }
+    } catch {
+      errorEl.textContent = "// CONNECTION FAILED";
+      errorEl.style.display = "block";
+    }
+  });
 
-    const content = document.createElement("div");
-    content.className = "login-modal-content";
-
-    const closeButton = document.createElement("button");
-    closeButton.className = "close-btn";
-    closeButton.innerHTML = "&times;";
-    closeButton.onclick = onClose;
-    content.appendChild(closeButton);
-
-    const title = document.createElement("h2");
-    title.textContent = "[ AUTHENTICATE ]";
-    content.appendChild(title);
-
-    const form = document.createElement("form");
-
-    const passwordLabel = document.createElement("label");
-    passwordLabel.textContent = "ACCESS KEY:";
-    const passwordInput = document.createElement("input");
-    passwordInput.type = "password";
-    passwordInput.placeholder = "Enter access key...";
-    form.appendChild(passwordLabel);
-    form.appendChild(passwordInput);
-
-    const errorMessage = document.createElement("p");
-    errorMessage.className = "error-message";
-    form.appendChild(errorMessage);
-
-    const submitButton = document.createElement("button");
-    submitButton.type = "submit";
-    submitButton.className = "submit-btn";
-    submitButton.textContent = "[ ACCESS ]";
-    form.appendChild(submitButton);
-
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        errorMessage.textContent = "";
-
-        const password = passwordInput.value;
-        if (!password) {
-            errorMessage.textContent = "// PASSWORD REQUIRED";
-            return;
-        }
-
-        try {
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                onLogin(data.token);
-                onClose();
-            } else if (response.status === 401) {
-                errorMessage.textContent = "// INVALID CREDENTIALS";
-            } else {
-                errorMessage.textContent = "// LOGIN FAILED";
-            }
-        } catch (error) {
-            errorMessage.textContent = "// CONNECTION FAILED";
-        }
-    };
-
-    content.appendChild(form);
-    overlay.appendChild(content);
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) onClose();
-    });
-
-    const handleEscape = (e) => {
-        if (e.key === "Escape") {
-            document.removeEventListener("keydown", handleEscape);
-            onClose();
-        }
-    };
-    document.addEventListener("keydown", handleEscape);
-
-    passwordInput.focus();
+  document.body.appendChild(overlay);
+  document.addEventListener("keydown", handleEscape);
+  input.focus();
 }

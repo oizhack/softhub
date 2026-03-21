@@ -1,263 +1,246 @@
-export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory, onDeleteCategory) {
-    const existingStyle = document.getElementById("admin-styles");
-    if (existingStyle) existingStyle.remove();
+export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory, onDeleteCategory, allSoftware = [], onDelete) {
+  const existingStyle = document.getElementById('admin-styles');
+  if (existingStyle) existingStyle.remove();
 
-    const style = document.createElement("style");
-    style.id = "admin-styles";
-    style.textContent = `
-        .admin-panel {
-            background-color: var(--surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 2rem; margin-bottom: 2rem;
-            box-shadow: 0 0 20px rgba(0,255,240,0.06);
-        }
-        .admin-panel h2 {
-            font-family: 'Orbitron', sans-serif; color: var(--neon-cyan);
-            margin-bottom: 1.5rem; text-align: center;
-            text-shadow: 0 0 5px rgba(0,255,240,0.2);
-        }
-        .admin-section {
-            border: 1px dashed var(--border); border-radius: 4px; padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .admin-section h3 {
-            font-family: 'Fira Code', monospace; color: var(--text);
-            margin-bottom: 1rem; text-align: center; font-size: 1.1rem;
-        }
-        .admin-form {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-        }
-        .admin-form .form-group {
-            display: flex; flex-direction: column;
-        }
-        .admin-form .full-width {
-            grid-column: 1 / -1;
-        }
-        .admin-form label {
-            margin-bottom: 0.5rem; color: var(--text); font-size: 0.9rem;
-        }
-        .admin-panel input[type="text"],
-        .admin-panel input[type="url"],
-        .admin-panel textarea,
-        .admin-panel select {
-            width: 100%; padding: 0.8rem; background-color: var(--bg);
-            border: 1px solid var(--border); color: var(--text);
-            border-radius: 4px; font-family: 'Fira Code', monospace;
-            font-size: 0.9rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .admin-panel input[type="text"]:focus,
-        .admin-panel input[type="url"]:focus,
-        .admin-panel textarea:focus,
-        .admin-panel select:focus {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 8px rgba(0,255,240,0.1);
-        }
-        .admin-panel textarea { resize: vertical; min-height: 80px; }
-        .admin-panel .add-btn {
-            background-color: var(--neon-cyan); color: var(--bg);
-            border: 1px solid var(--neon-cyan); padding: 0.8rem 1.5rem;
-            border-radius: 4px; font-size: 0.95rem; cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 8px rgba(0,255,240,0.1);
-        }
-        .admin-panel .add-btn:hover {
-            background-color: #00e6d6;
-            box-shadow: 0 0 10px rgba(0,255,240,0.25);
-        }
-        .admin-panel .logout-btn {
-            background-color: transparent; color: var(--danger);
-            border: 1px solid var(--danger); padding: 0.8rem 1.5rem;
-            border-radius: 4px; margin-top: 1rem; cursor: pointer;
-            transition: all 0.2s ease; width: 100%;
-        }
-        .admin-panel .logout-btn:hover {
-            background-color: rgba(255,62,62,0.1);
-            box-shadow: 0 0 10px rgba(255,62,62,0.25);
-        }
-        .admin-panel .category-list {
-            display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem; margin-bottom: 1.5rem;
-        }
-        .admin-panel .category-tag {
-            font-family: 'Fira Code', monospace; font-size: 0.8rem;
-            border: 1px solid var(--border); border-radius: 4px;
-            padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;
-            background-color: var(--bg); color: var(--text);
-        }
-        .admin-panel .category-tag button {
-            background: transparent; border: none; color: var(--text-muted);
-            font-size: 0.9rem; cursor: pointer; padding: 0 2px; line-height: 1;
-        }
-        .admin-panel .category-tag button:hover { color: var(--danger); opacity: 1; }
-        .admin-panel .add-category-input-group {
-            display: flex; gap: 8px; margin-bottom: 1rem;
-        }
-        .admin-panel .add-category-input-group input { flex-grow: 1; }
-        .admin-panel .add-category-input-group button { padding: 0.6rem 1rem; font-size: 0.9rem; }
-        .admin-panel .error-message {
-            color: var(--danger); text-align: center; margin-top: 1rem; font-size: 0.85rem;
-        }
-        @media (max-width: 600px) {
-            .admin-form { grid-template-columns: 1fr; }
-            .admin-form .full-width { grid-column: 1; }
-        }
-    `;
-    document.head.appendChild(style);
+  const style = document.createElement('style');
+  style.id = 'admin-styles';
+  style.textContent = `
+    .admin-panel { background: #1a1a1a; border-radius: 0.5rem; padding: 1rem; margin-bottom: 2rem; }
+    .admin-bento-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
+    @media (max-width: 768px) { .admin-bento-grid { grid-template-columns: 1fr; } }
+    .admin-section-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .admin-section-accent { width: 3px; height: 1.25rem; background: #99f7ff; display: inline-block; flex-shrink: 0; }
+    .admin-section-title { font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; font-weight: 700; color: #99f7ff; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
+    .admin-card { background: #131313; border-radius: 0.5rem; padding: 1rem; }
+    .vault-input, .vault-select, .vault-textarea { width: 100%; background: #000; border: 1px solid rgba(72,72,71,0.3); border-radius: 0.375rem; padding: 0.5rem 0.75rem; color: #fff; font-family: 'Inter', sans-serif; font-size: 0.8rem; outline: none; transition: all 0.3s; box-sizing: border-box; }
+    .vault-input:focus, .vault-select:focus, .vault-textarea:focus { box-shadow: 0 0 10px rgba(153,247,255,0.2); border-color: transparent; }
+    .vault-textarea { resize: vertical; min-height: 60px; }
+    .vault-select { appearance: none; }
+    .vault-btn-primary { width: 100%; padding: 0.65rem; background: linear-gradient(to right, #99f7ff, #00f1fe); color: #004145; font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; border: none; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 16px rgba(0,241,254,0.2); }
+    .vault-btn-primary:hover { filter: brightness(1.1); }
+    .vault-btn-secondary { background: transparent; border: 1px solid rgba(153,247,255,0.3); color: #99f7ff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.45rem 0.75rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .vault-btn-secondary:hover { background: rgba(153,247,255,0.1); }
+    .category-chip { background: #262626; border-radius: 9999px; padding: 0.2rem 0.625rem; font-size: 0.7rem; color: #adaaaa; display: inline-flex; align-items: center; gap: 0.25rem; font-family: 'Inter', sans-serif; }
+    .category-chip-del { background: transparent; border: none; color: #adaaaa; cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0 2px; }
+    .category-chip-del:hover { color: #ff716c; }
+    .chips-container { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
+    .admin-form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .admin-form-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em; color: #adaaaa; font-family: 'Inter', sans-serif; display: block; }
+    .admin-software-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+    @media (max-width: 768px) { .admin-software-form { grid-template-columns: 1fr; } }
+    .admin-software-form .full-width { grid-column: 1 / -1; }
+    .error-text { color: #ff716c; font-size: 0.75rem; text-align: center; margin-top: 0.375rem; }
 
-    const panel = document.createElement("div");
-    panel.className = "admin-panel";
-
-    const title = document.createElement("h2");
-    title.textContent = "[ ADMIN PANEL ]";
-    panel.appendChild(title);
-
-    // --- MANAGE CATEGORIES SECTION ---
-    const categorySection = document.createElement("div");
-    categorySection.className = "admin-section";
-    const categoryTitle = document.createElement("h3");
-    categoryTitle.textContent = "[ MANAGE CATEGORIES ]";
-    categorySection.appendChild(categoryTitle);
-
-    const categoryList = document.createElement("div");
-    categoryList.className = "category-list";
-
-    function renderCategoryTags() {
-        categoryList.innerHTML = "";
-        if (categories.length === 0) {
-            categoryList.innerHTML = `<span style="color:var(--text-muted);">No categories yet.</span>`;
-            return;
-        }
-        categories.forEach(cat => {
-            const tag = document.createElement("span");
-            tag.className = "category-tag";
-            tag.textContent = cat;
-            const deleteBtn = document.createElement("button");
-            deleteBtn.innerHTML = "&times;";
-            deleteBtn.title = `Delete ${cat}`;
-            deleteBtn.onclick = () => onDeleteCategory(cat);
-            tag.appendChild(deleteBtn);
-            categoryList.appendChild(tag);
-        });
+    @media (max-width: 640px) {
+      .admin-panel { padding: 0.75rem; }
+      .admin-card { padding: 0.75rem; }
+      .admin-bento-grid { gap: 0.75rem; }
+      .vault-input, .vault-select, .vault-textarea { font-size: 16px; }
+      .vault-btn-secondary { min-height: 44px; }
     }
-    renderCategoryTags();
-    categorySection.appendChild(categoryList);
+  `;
+  document.head.appendChild(style);
 
-    const addCatGroup = document.createElement("div");
-    addCatGroup.className = "add-category-input-group";
-    const newCatInput = document.createElement("input");
-    newCatInput.type = "text";
-    newCatInput.placeholder = "New category name";
-    const addCatBtn = document.createElement("button");
-    addCatBtn.className = "add-btn";
-    addCatBtn.textContent = "[ ADD ]";
-    addCatBtn.onclick = () => {
-        const name = newCatInput.value.trim();
-        if (name) { onAddCategory(name); newCatInput.value = ""; }
-    };
-    addCatGroup.appendChild(newCatInput);
-    addCatGroup.appendChild(addCatBtn);
-    categorySection.appendChild(addCatGroup);
-    panel.appendChild(categorySection);
+  const panel = document.createElement('div');
+  panel.className = 'admin-panel';
 
-    // --- ADD SOFTWARE SECTION ---
-    const softwareSection = document.createElement("div");
-    softwareSection.className = "admin-section";
-    const softwareTitle = document.createElement("h3");
-    softwareTitle.textContent = "[ ADD SOFTWARE ]";
-    softwareSection.appendChild(softwareTitle);
+  const grid = document.createElement('div');
+  grid.className = 'admin-bento-grid';
 
-    const form = document.createElement("form");
-    form.className = "admin-form";
+  // --- Section 1: NEW_CATEGORY ---
+  const catCard = document.createElement('div');
+  catCard.className = 'admin-card';
 
-    const fields = [
-        { id: "name",        label: "NAME:",         type: "text",     placeholder: "e.g., VS Code" },
-        { id: "version",     label: "VERSION:",      type: "text",     placeholder: "e.g., 1.85.1" },
-        { id: "url",         label: "DOWNLOAD URL:", type: "url",      placeholder: "https://example.com/setup.exe" },
-        { id: "category",    label: "CATEGORY:",     type: "select",   placeholder: "Select category" },
-        { id: "description", label: "DESCRIPTION:",  type: "textarea", placeholder: "Brief description...", cls: "full-width" },
-    ];
+  const catHeader = document.createElement('div');
+  catHeader.className = 'admin-section-header';
+  catHeader.innerHTML = '<span class="admin-section-accent"></span><h2 class="admin-section-title">NEW_CATEGORY</h2>';
+  catCard.appendChild(catHeader);
 
-    const inputs = {};
-    fields.forEach(field => {
-        const group = document.createElement("div");
-        group.className = `form-group ${field.cls || ""}`;
+  const chipsContainer = document.createElement('div');
+  chipsContainer.className = 'chips-container';
+  catCard.appendChild(chipsContainer);
 
-        const label = document.createElement("label");
-        label.htmlFor = `admin-${field.id}`;
-        label.textContent = field.label;
-        group.appendChild(label);
+  function renderCategoryTags() {
+    chipsContainer.innerHTML = '';
+    if (categories.length === 0) {
+      const empty = document.createElement('p');
+      empty.style.cssText = 'color:#adaaaa;font-size:0.875rem;';
+      empty.textContent = 'No categories yet.';
+      chipsContainer.appendChild(empty);
+    } else {
+      categories.forEach(cat => {
+        const chip = document.createElement('div');
+        chip.className = 'category-chip';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = cat;
+        const delBtn = document.createElement('button');
+        delBtn.className = 'category-chip-del';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = `Delete ${cat}`;
+        delBtn.onclick = () => onDeleteCategory(cat);
+        chip.appendChild(nameSpan);
+        chip.appendChild(delBtn);
+        chipsContainer.appendChild(chip);
+      });
+    }
+  }
+  renderCategoryTags();
 
-        let input;
-        if (field.type === "select") {
-            input = document.createElement("select");
-            input.id = `admin-${field.id}`;
-            const placeholder = document.createElement("option");
-            placeholder.value = ""; placeholder.disabled = true; placeholder.selected = true;
-            placeholder.textContent = field.placeholder;
-            input.appendChild(placeholder);
-            categories.forEach(cat => {
-                const opt = document.createElement("option");
-                opt.value = cat; opt.textContent = cat;
-                input.appendChild(opt);
-            });
-        } else if (field.type === "textarea") {
-            input = document.createElement("textarea");
-            input.id = `admin-${field.id}`;
-            input.placeholder = field.placeholder;
-        } else {
-            input = document.createElement("input");
-            input.type = field.type;
-            input.id = `admin-${field.id}`;
-            input.placeholder = field.placeholder;
-        }
-        inputs[field.id] = input;
-        group.appendChild(input);
-        form.appendChild(group);
-    });
+  const addCatRow = document.createElement('div');
+  addCatRow.style.cssText = 'display:flex;gap:0.5rem;';
+  const catInput = document.createElement('input');
+  catInput.type = 'text';
+  catInput.className = 'vault-input';
+  catInput.placeholder = 'Category name';
+  const addCatBtn = document.createElement('button');
+  addCatBtn.className = 'vault-btn-secondary';
+  addCatBtn.textContent = 'COMMIT';
+  addCatBtn.onclick = () => {
+    const val = catInput.value.trim();
+    if (val) { onAddCategory(val); catInput.value = ''; }
+  };
+  addCatRow.appendChild(catInput);
+  addCatRow.appendChild(addCatBtn);
+  catCard.appendChild(addCatRow);
 
-    const errorMsg = document.createElement("p");
-    errorMsg.className = "error-message full-width";
-    form.appendChild(errorMsg);
+  // --- Section 2: REGISTER_SOFTWARE ---
+  const artifactCard = document.createElement('div');
+  artifactCard.className = 'admin-card';
 
-    const submitBtn = document.createElement("button");
-    submitBtn.type = "submit";
-    submitBtn.className = "add-btn full-width";
-    submitBtn.textContent = "[ ADD SOFTWARE ]";
-    form.appendChild(submitBtn);
+  const artifactHeader = document.createElement('div');
+  artifactHeader.className = 'admin-section-header';
+  artifactHeader.innerHTML = '<span class="admin-section-accent"></span><h2 class="admin-section-title">REGISTER_SOFTWARE</h2>';
+  artifactCard.appendChild(artifactHeader);
 
-    form.onsubmit = async (e) => {
+  const form = document.createElement('form');
+  form.className = 'admin-software-form';
+
+  const fields = [
+    { name: 'name',        label: 'Software Name',   type: 'text',     required: true },
+    { name: 'version',     label: 'Version',         type: 'text',     required: false },
+    { name: 'url',         label: 'Download URL',    type: 'url',      required: true,  cls: 'full-width' },
+    { name: 'category',    label: 'Category',        type: 'select',   required: true },
+    { name: 'description', label: 'Description',     type: 'textarea', required: false, cls: 'full-width' },
+  ];
+
+  function toDirectDownload(url) {
+    // drive.google.com/file/d/FILE_ID/... → direct download
+    const driveFile = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveFile) return `https://drive.google.com/uc?export=download&id=${driveFile[1]}`;
+
+    // drive.google.com/open?id=FILE_ID
+    const driveOpen = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (driveOpen) return `https://drive.google.com/uc?export=download&id=${driveOpen[1]}`;
+
+    // Google Sheets → export as xlsx
+    const sheets = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (sheets) return `https://docs.google.com/spreadsheets/d/${sheets[1]}/export?format=xlsx`;
+
+    // Google Docs → export as docx
+    const docs = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+    if (docs) return `https://docs.google.com/document/d/${docs[1]}/export?format=docx`;
+
+    // Google Slides → export as pptx
+    const slides = url.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/);
+    if (slides) return `https://docs.google.com/presentation/d/${slides[1]}/export/pptx`;
+
+    return url;
+  }
+
+  const inputs = {};
+  fields.forEach(field => {
+    const group = document.createElement('div');
+    group.className = `admin-form-group${field.cls ? ' ' + field.cls : ''}`;
+
+    const label = document.createElement('label');
+    label.className = 'admin-form-label';
+    label.textContent = field.label;
+    group.appendChild(label);
+
+    let input;
+    if (field.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'vault-select';
+      const placeholder = document.createElement('option');
+      placeholder.value = ''; placeholder.disabled = true; placeholder.selected = true;
+      placeholder.textContent = 'Select category';
+      input.appendChild(placeholder);
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat; opt.textContent = cat;
+        input.appendChild(opt);
+      });
+    } else if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.className = 'vault-textarea';
+    } else {
+      input = document.createElement('input');
+      input.type = field.type;
+      input.className = 'vault-input';
+      if (field.placeholder) input.placeholder = field.placeholder;
+    }
+    input.name = field.name;
+    inputs[field.name] = input;
+    group.appendChild(input);
+    if (field.name === 'url') {
+      input.addEventListener('paste', (e) => {
         e.preventDefault();
-        errorMsg.textContent = "";
-        const data = {
-            name:        inputs.name.value.trim(),
-            version:     inputs.version.value.trim(),
-            category:    inputs.category.value,
-            url:         inputs.url.value.trim(),
-            description: inputs.description.value.trim(),
-        };
-        if (!data.name || !data.url || !data.category) {
-            errorMsg.textContent = "// NAME, URL and CATEGORY are required";
-            return;
-        }
-        try {
-            await onAdd(data);
-            resetForm();
-        } catch (err) {
-            errorMsg.textContent = err.message || "// ERROR";
-        }
+        const pasted = (e.clipboardData || window.clipboardData).getData('text');
+        input.value = toDirectDownload(pasted.trim());
+      });
+      const hint = document.createElement('span');
+      hint.style.cssText = 'font-size:9px;color:#484847;font-family:Inter,sans-serif;margin-top:2px;';
+      hint.textContent = 'Google Drive share links are converted automatically';
+      group.appendChild(hint);
+    }
+    form.appendChild(group);
+  });
+
+  const errorMsg = document.createElement('p');
+  errorMsg.className = 'error-text full-width';
+  errorMsg.style.display = 'none';
+  form.appendChild(errorMsg);
+
+  const submitBtn = document.createElement('button');
+  submitBtn.type = 'submit';
+  submitBtn.className = 'vault-btn-primary full-width';
+  submitBtn.textContent = 'ADD_SOFTWARE';
+  form.appendChild(submitBtn);
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    const data = {
+      name:        inputs.name.value.trim(),
+      version:     inputs.version.value.trim(),
+      url:         toDirectDownload(inputs.url.value.trim()),
+      category:    inputs.category.value,
+      description: inputs.description.value.trim(),
     };
+    if (!data.name || !data.url || !data.category) {
+      errorMsg.textContent = '// NAME, URL and CATEGORY are required';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    try {
+      await onAdd(data);
+      resetForm();
+    } catch (err) {
+      errorMsg.textContent = err.message || '// ERROR';
+      errorMsg.style.display = 'block';
+    }
+  };
 
-    softwareSection.appendChild(form);
-    panel.appendChild(softwareSection);
+  artifactCard.appendChild(form);
 
-    const logoutBtn = document.createElement("button");
-    logoutBtn.className = "logout-btn";
-    logoutBtn.textContent = "[ LOGOUT ]";
-    logoutBtn.onclick = onLogout;
-    panel.appendChild(logoutBtn);
+  grid.appendChild(catCard);
+  grid.appendChild(artifactCard);
+  panel.appendChild(grid);
 
-    const resetForm = () => {
-        form.reset();
-        errorMsg.textContent = "";
-    };
+  const resetForm = () => {
+    form.reset();
+    errorMsg.style.display = 'none';
+  };
 
-    return { element: panel, resetForm, renderCategoryTags };
+  return { element: panel, resetForm, renderCategoryTags };
 }
