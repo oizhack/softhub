@@ -1,0 +1,161 @@
+```js
+// FILE: softhub/tests/backend/softwareStore.unit.test.js
+import { 
+  getAllSoftware, 
+  addSoftware, 
+  deleteSoftware, 
+  getAllCategories, 
+  resetSoftwareStore 
+} from '../../backend/src/softwareStore.js';
+
+beforeEach(() => {
+  resetSoftwareStore();
+});
+
+describe('Software Store', () => {
+  it('starts with 6 seed entries', () => {
+    expect(getAllSoftware().length).toBe(6);
+  });
+
+  it('getAllCategories returns sorted string array', () => {
+    const categories = getAllCategories();
+    expect(categories).toEqual(expect.arrayContaining(['Category1', 'Category2', 'Category3'])); // Adjust based on actual categories
+  });
+
+  it('addSoftware creates entry with correct shape', () => {
+    const software = addSoftware({ name: 'NewApp', version: '1.0', category: 'Utilities', url: 'https://example.com' });
+    expect(software).toHaveProperty('id');
+    expect(software).toHaveProperty('name', 'NewApp');
+    expect(software).toHaveProperty('version', '1.0');
+    expect(software).toHaveProperty('category', 'Utilities');
+    expect(software).toHaveProperty('url', 'https://example.com');
+    expect(software).toHaveProperty('createdAt');
+  });
+
+  it('addSoftware throws if name missing', () => {
+    expect(() => addSoftware({ version: '1.0', category: 'Utilities', url: 'https://example.com' })).toThrow();
+  });
+
+  it('addSoftware throws if url missing', () => {
+    expect(() => addSoftware({ name: 'NewApp', version: '1.0', category: 'Utilities' })).toThrow();
+  });
+
+  it('deleteSoftware removes entry and returns it', () => {
+    const deleted = deleteSoftware(1); // Assuming id of 1
+    expect(deleted).toHaveProperty('id', 1);
+  });
+
+  it('deleteSoftware returns null for unknown id', () => {
+    const result = deleteSoftware(9999); // Unknown id
+    expect(result).toBeNull();
+  });
+});
+```
+
+```js
+// FILE: softhub/tests/backend/auth.api.test.js
+import request from 'supertest';
+import app from '../../backend/src/index.js';
+import { activeTokens } from '../../backend/src/routes/auth.js';
+
+beforeEach(() => {
+  activeTokens.clear();
+  process.env.ADMIN_PASSWORD = "admin123";
+});
+
+describe('Auth API', () => {
+  it('POST /api/auth/login returns 200 and token for correct password', async () => {
+    const response = await request(app).post('/api/auth/login').send({ password: 'admin123' });
+    expect(response.status).toBe(200);
+    expect(response.body.token).toBeDefined();
+  });
+
+  it('POST /api/auth/login returns 401 for wrong password', async () => {
+    const response = await request(app).post('/api/auth/login').send({ password: 'wrongpassword' });
+    expect(response.status).toBe(401);
+  });
+
+  it('token is added to activeTokens Set after successful login', async () => {
+    const response = await request(app).post('/api/auth/login').send({ password: 'admin123' });
+    expect(activeTokens.has(response.body.token)).toBe(true);
+  });
+});
+```
+
+```js
+// FILE: softhub/tests/backend/software.api.test.js
+import request from 'supertest';
+import app from '../../backend/src/index.js';
+import { activeTokens } from '../../backend/src/routes/auth.js';
+import { resetSoftwareStore } from '../../backend/src/softwareStore.js';
+
+beforeEach(() => {
+  resetSoftwareStore();
+  activeTokens.clear();
+});
+
+describe('Software API', () => {
+  it('GET /api/software returns 200 and array with 6 items', async () => {
+    const response = await request(app).get('/api/software');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(6);
+  });
+
+  it('GET /api/categories returns 200 and non-empty string array', async () => {
+    const response = await request(app).get('/api/categories');
+    expect(response.status).toBe(200);
+    expect(response.body).toBeInstanceOf(Array);
+    expect(response.body.length).toBeGreaterThan(0);
+  });
+
+  it('POST /api/software without auth token returns 401', async () => {
+    const response = await request(app).post('/api/software').send({ name: 'TestApp', version: '1.0', category: 'Utilities', url: 'https://example.com' });
+    expect(response.status).toBe(401);
+  });
+
+  it('POST /api/software with valid Bearer token returns 201 with correct shape', async () => {
+    const token = 'validToken'; // Add a valid token to activeTokens for testing
+    activeTokens.add(token);
+    const response = await request(app)
+      .post('/api/software')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'TestApp', description: 'A test', version: '1.0', category: 'Utilities', url: 'https://example.com' });
+      
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('name', 'TestApp');
+    expect(response.body).toHaveProperty('url', 'https://example.com');
+    expect(response.body).toHaveProperty('createdAt');
+  });
+
+  it('POST /api/software with auth but missing name returns 400', async () => {
+    const token = 'validToken'; // Add a valid token to activeTokens for testing
+    activeTokens.add(token);
+    const response = await request(app)
+      .post('/api/software')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ version: '1.0', category: 'Utilities', url: 'https://example.com' });
+      
+    expect(response.status).toBe(400);
+  });
+
+  it('DELETE /api/software/:id without auth returns 401', async () => {
+    const response = await request(app).delete('/api/software/1');
+    expect(response.status).toBe(401);
+  });
+
+  it('DELETE /api/software/:id with auth and valid id returns 200', async () => {
+    const token = 'validToken'; // Add a valid token to activeTokens for testing
+    activeTokens.add(token);
+    const response = await request(app).delete('/api/software/1').set('Authorization', `Bearer ${token}`);
+    expect(response.status).toBe(200);
+  });
+
+  it('DELETE /api/software/:id with auth and invalid id returns 404', async () => {
+    const token = 'validToken'; // Add a valid token to activeTokens for testing
+    activeTokens.add(token);
+    const response = await request(app).delete('/api/software/9999').set('Authorization', `Bearer ${token}`);
+    expect(response.status).toBe(404);
+  });
+});
+```

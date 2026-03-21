@@ -1,0 +1,165 @@
+You are a frontend engineer specializing in vanilla JavaScript, HTML, and CSS.
+Write six files for a Vanilla JS Vite SPA.
+Return each file as a separate fenced code block preceded by a comment line: // FILE: <relative path>
+Use triple-backtick html for .html files and triple-backtick js for .js files.
+
+Design theme: cyberpunk / hacker aesthetic. Dark background (#0a0a0f), neon cyan (#00fff0) and neon magenta (#ff00aa) accents, Fira Code font for body text, Orbitron for headings. CSS custom properties. Grid layout for cards.
+
+API base: /api (Vite proxies to backend at localhost:3002).
+Auth: token stored in sessionStorage under key "sw_token". Send as Authorization: Bearer <token> header on POST and DELETE.
+
+---
+
+FILE 1: softhub/frontend/index.html
+Dark theme base. Load Google Fonts: Orbitron (700) and Fira Code (400, 500) from fonts.googleapis.com.
+Define CSS custom properties on :root: --bg:#0a0a0f --surface:#111118 --border:#1e1e2e --neon-cyan:#00fff0 --neon-magenta:#ff00aa --text:#c9d1d9 --text-muted:#6e7681 --danger:#ff3e3e
+Full-page dark background. Keep div id="app" and script type="module" src="/src/app.js".
+Navbar: left shows "[ SW_HUB ]" in Orbitron neon-cyan, right has login button id="login-btn" styled as neon outline button (transparent bg, neon-cyan border and color, Fira Code).
+Hero section: big title "SOFTWARE HUB" (Orbitron, large, neon-cyan), subtitle "// ACCESS THE ARSENAL" (Fira Code, text-muted).
+All base CSS in a style tag: reset, body dark bg, navbar, hero, general button styles. Add subtle background grid using CSS linear-gradient repeating pattern to give scanline/grid effect.
+
+---
+
+FILE 2: softhub/frontend/src/components/SoftwareGrid.js
+Export: renderSoftwareGrid(items, onDelete, isAdmin)
+Creates a div.sw-grid (display grid, grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)), gap 1.5rem).
+Each card div.sw-card: border 1px solid var(--border), background var(--surface), border-radius 8px, padding 1.5rem, transition border-color 0.2s box-shadow 0.2s. On hover: border-color var(--neon-cyan), box-shadow 0 0 12px rgba(0,255,240,0.15).
+Card top row (flex, justify-content space-between, align-items flex-start): h3 name (Orbitron, var(--neon-cyan), margin 0, font-size 1rem) + span.badge category (bg rgba(0,255,240,0.1), color var(--neon-cyan), border 1px solid var(--neon-cyan), border-radius 4px, padding 2px 8px, font-size 0.7rem, text-transform uppercase).
+p description: color var(--text-muted), font-size 0.9rem, margin 0.75rem 0, line-height 1.5.
+Footer row (flex, align-items center, gap 0.75rem, margin-top auto): span version ("v" + item.version, Fira Code, var(--text-muted), font-size 0.85rem) + a download (href=item.url, target="_blank", bg #00fff0, color #0a0a0f, font-weight bold, padding 0.4rem 1rem, border-radius 4px, text-decoration none, font-family Fira Code, white-space nowrap, font-size 0.85rem). Text "[ DOWNLOAD ]".
+If isAdmin: add button.delete-btn "[ DEL ]" (color var(--danger), border 1px solid var(--danger), bg transparent, padding 0.25rem 0.6rem, border-radius 4px, cursor pointer, font-family Fira Code, font-size 0.8rem, margin-left auto) that calls onDelete(item.id).
+Inject styles via style element id="sw-grid-styles" into document.head if not already present.
+Returns the grid div.
+
+---
+
+FILE 3: softhub/frontend/src/components/CategoryFilter.js
+Export: renderCategoryFilter(categories, activeCategory, onSelect)
+Creates div.category-filter (display flex, flex-wrap wrap, gap 0.75rem, margin-bottom 2rem, padding 0 1rem).
+Prepend "All" to the categories array.
+Each button.filter-btn: bg transparent, border 1px solid var(--border), color var(--text-muted), padding 0.4rem 1rem, border-radius 20px, cursor pointer, font-family Fira Code, font-size 0.85rem, transition all 0.2s.
+Active (category === activeCategory): border-color var(--neon-cyan), color var(--neon-cyan), bg rgba(0,255,240,0.08).
+On click calls onSelect(category).
+Returns the div.
+
+---
+
+FILE 4: softhub/frontend/src/components/LoginModal.js
+Export: renderLoginModal(onLogin, onClose)
+Full-screen overlay div.modal-overlay: position fixed, inset 0, bg rgba(0,0,0,0.85), z-index 100, display flex, align-items center, justify-content center.
+Inner div.modal-box: bg var(--surface), border 1px solid var(--neon-cyan), border-radius 8px, padding 2rem, min-width 320px, max-width 90vw, box-shadow 0 0 30px rgba(0,255,240,0.2).
+h2 "[ AUTHENTICATE ]": Orbitron, color var(--neon-cyan), margin-bottom 1.5rem, font-size 1.1rem.
+input type=password: full-width (100%), bg var(--bg), border 1px solid var(--border), color var(--text), padding 0.75rem, border-radius 4px, font-family Fira Code, box-sizing border-box. On focus: border-color var(--neon-cyan), outline none.
+div.modal-error hidden: color var(--danger), font-size 0.85rem, margin-top 0.5rem.
+button submit "[ ACCESS ]": full-width, bg #00fff0, color #0a0a0f, font-weight bold, padding 0.75rem, border-radius 4px, margin-top 1rem, font-family Orbitron, cursor pointer, border none, font-size 0.9rem.
+p cancel: margin-top 1rem, text-align center, span "[ CANCEL ]" color var(--text-muted), cursor pointer, font-family Fira Code, font-size 0.85rem.
+On form submit: fetch POST /api/auth/login with { password }, on 200 call onLogin(data.token), on 401 show "// INVALID CREDENTIALS", on error show "// CONNECTION FAILED".
+Inject styles via style element id="modal-styles" into document.head.
+Returns the overlay div.
+
+---
+
+FILE 5: softhub/frontend/src/components/AdminPanel.js
+Export: renderAdminPanel(onAdd, onLogout)
+section.admin-panel: border 1px solid var(--neon-magenta), border-radius 8px, padding 1.5rem, margin-bottom 2rem, bg rgba(255,0,170,0.04).
+Header div (flex, justify-content space-between, align-items center, margin-bottom 1.25rem): h3 "[ ADMIN PANEL ]" (Orbitron, color var(--neon-magenta), margin 0, font-size 1rem) + button.logout-btn "[ LOGOUT ]" (Fira Code, small, color var(--text-muted), border 1px solid var(--border), bg transparent, cursor pointer, padding 0.25rem 0.75rem, border-radius 4px).
+Form: display grid, grid-template-columns repeat(2, 1fr), gap 0.75rem.
+Inputs: name (placeholder "Software name *"), version (placeholder "v1.0.0"), category (placeholder "e.g. Developer Tools"), url (placeholder "Download URL *"). Full-width description textarea (rows=2, placeholder "Short description", grid-column span 2).
+Input style: bg var(--bg), border 1px solid var(--border), color var(--text), padding 0.6rem 0.75rem, border-radius 4px, font-family Fira Code, font-size 0.9rem, width 100%, box-sizing border-box. On focus: border-color var(--neon-magenta), outline none.
+div.admin-error hidden: color var(--danger), font-size 0.8rem, grid-column span 2.
+submit button "+ ADD SOFTWARE": bg #ff00aa, color #0a0a0f, font-weight bold, padding 0.6rem 1.5rem, border-radius 4px, font-family Orbitron, border none, cursor pointer, font-size 0.85rem, grid-column span 2.
+On submit: validate name and url not empty, else show error "// NAME and URL are required". Call onAdd({ name, description: desc.value, version, category, url }).
+Logout button calls onLogout().
+Return { element: section, resetForm: function that clears inputs and hides error }.
+Inject styles via style element id="admin-styles".
+
+---
+
+FILE 6: softhub/frontend/src/app.js
+Complete this exact file (fill in implementations as described):
+
+import { renderSoftwareGrid } from "./components/SoftwareGrid.js";
+import { renderCategoryFilter } from "./components/CategoryFilter.js";
+import { renderLoginModal } from "./components/LoginModal.js";
+import { renderAdminPanel } from "./components/AdminPanel.js";
+
+let allSoftware = [];
+let categories = [];
+let activeCategory = "All";
+let authToken = sessionStorage.getItem("sw_token") || null;
+let isLoggedIn = !!authToken;
+let adminPanelInstance = null;
+
+async function loadData() {
+  const [swRes, catRes] = await Promise.all([fetch("/api/software"), fetch("/api/categories")]);
+  allSoftware = await swRes.json();
+  categories = await catRes.json();
+}
+
+function render() {
+  const root = document.getElementById("app");
+  root.innerHTML = "";
+  if (isLoggedIn) {
+    adminPanelInstance = renderAdminPanel(onAdd, logout);
+    root.appendChild(adminPanelInstance.element);
+  }
+  root.appendChild(renderCategoryFilter(categories, activeCategory, onCategorySelect));
+  const filtered = activeCategory === "All" ? allSoftware : allSoftware.filter(s => s.category === activeCategory);
+  root.appendChild(renderSoftwareGrid(filtered, onDelete, isLoggedIn));
+}
+
+function onCategorySelect(cat) { activeCategory = cat; render(); }
+
+function showLoginModal() {
+  const modal = renderLoginModal(onLogin, () => modal.remove());
+  document.body.appendChild(modal);
+}
+
+function onLogin(token) {
+  sessionStorage.setItem("sw_token", token);
+  authToken = token;
+  isLoggedIn = true;
+  document.getElementById("login-btn").textContent = "[ LOGOUT ]";
+  render();
+}
+
+function logout() {
+  sessionStorage.removeItem("sw_token");
+  authToken = null;
+  isLoggedIn = false;
+  document.getElementById("login-btn").textContent = "[ LOGIN ]";
+  render();
+}
+
+async function onAdd(data) {
+  const res = await fetch("/api/software", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + authToken },
+    body: JSON.stringify(data)
+  });
+  if (res.status === 201) {
+    await loadData(); render();
+    if (adminPanelInstance) adminPanelInstance.resetForm();
+  } else if (res.status === 401) {
+    alert("// SESSION EXPIRED"); logout();
+  } else {
+    const err = await res.json(); alert("// ERROR: " + (err.error || "unknown"));
+  }
+}
+
+async function onDelete(id) {
+  const res = await fetch("/api/software/" + id, {
+    method: "DELETE",
+    headers: { "Authorization": "Bearer " + authToken }
+  });
+  if (res.status === 200) { await loadData(); render(); }
+  else if (res.status === 401) { alert("// SESSION EXPIRED"); logout(); }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const loginBtn = document.getElementById("login-btn");
+  loginBtn.textContent = isLoggedIn ? "[ LOGOUT ]" : "[ LOGIN ]";
+  loginBtn.addEventListener("click", () => { if (isLoggedIn) logout(); else showLoginModal(); });
+  await loadData();
+  render();
+});

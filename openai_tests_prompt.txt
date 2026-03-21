@@ -1,0 +1,53 @@
+Write three Jest test files for a Node.js Express app using ESM modules and supertest.
+Use "@jest/globals" for describe/it/expect/beforeEach. Return each file as a separate code block preceded by // FILE: <path>.
+Use triple-backtick js for each block.
+
+Import paths from tests/backend/ are relative like: ../../backend/src/...
+
+---
+
+FILE 1: softhub/tests/backend/softwareStore.unit.test.js
+import from ../../backend/src/softwareStore.js: getAllSoftware, addSoftware, deleteSoftware, getAllCategories, resetSoftwareStore
+beforeEach: call resetSoftwareStore()
+Tests:
+  - starts with 6 seed entries (getAllSoftware().length === 6)
+  - getAllCategories returns sorted string array
+  - addSoftware creates entry with correct shape (id, name, version, category, url, createdAt fields present)
+  - addSoftware throws if name missing
+  - addSoftware throws if url missing
+  - deleteSoftware removes entry and returns it
+  - deleteSoftware returns null for unknown id
+
+---
+
+FILE 2: softhub/tests/backend/auth.api.test.js
+import app from ../../backend/src/index.js
+import { activeTokens } from ../../backend/src/routes/auth.js
+use supertest
+beforeEach: activeTokens.clear(), process.env.ADMIN_PASSWORD = "admin123"
+Tests:
+  POST /api/auth/login
+  - returns 200 and { token } string for correct password "admin123"
+  - returns 401 for wrong password
+  - returned token is added to activeTokens Set after successful login
+
+---
+
+FILE 3: softhub/tests/backend/software.api.test.js
+import app from ../../backend/src/index.js
+import { activeTokens } from ../../backend/src/routes/auth.js
+import { resetSoftwareStore } from ../../backend/src/softwareStore.js
+use supertest
+beforeEach: resetSoftwareStore(), activeTokens.clear()
+
+Tests:
+  GET /api/software => 200, array with 6 items
+  GET /api/categories => 200, non-empty string array
+  POST /api/software without auth token => 401
+  POST /api/software with valid Bearer token in activeTokens => 201 with correct shape (id, name, url, createdAt present)
+    (add a token directly to activeTokens, send as Authorization: Bearer <token>)
+    body: { name: "TestApp", description: "A test", version: "1.0", category: "Utilities", url: "https://example.com" }
+  POST /api/software with auth but missing name => 400
+  DELETE /api/software/:id without auth => 401
+  DELETE /api/software/:id with auth and valid id (id=1) => 200
+  DELETE /api/software/:id with auth and invalid id (id=9999) => 404

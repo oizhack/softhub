@@ -1,0 +1,927 @@
+// FILE: softhub/frontend/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --border: #1e1e2e;
+            --neon-cyan: #00fff0;
+            --neon-magenta: #ff00aa;
+            --text: #c9d1d9;
+            --text-muted: #6e7681;
+            --danger: #ff3e3e;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                linear-gradient(0deg, transparent 95%, rgba(0,255,240,0.015) 95%), /* Reduced opacity */
+                linear-gradient(90deg, transparent 95%, rgba(0,255,240,0.015) 95%); /* Reduced opacity */
+            background-size: 20px 20px;
+        }
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem; background-color: rgba(10,10,15,0.8);
+            backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 20;
+        }
+        .navbar-brand {
+            font-family: 'Orbitron', sans-serif; color: var(--neon-cyan);
+            font-size: 1.5rem; text-decoration: none;
+            text-shadow: 0 0 4px rgba(0,255,240,0.2); /* Reduced opacity */
+        }
+        .hero { text-align: center; padding: 4rem 1rem; margin-bottom: 3rem; }
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif; font-size: 3.5rem;
+            color: var(--neon-cyan); margin-bottom: 0.5rem;
+            text-shadow: 0 0 6px rgba(0,255,240,0.25); /* Reduced opacity */
+            letter-spacing: 2px;
+        }
+        .hero p { font-family: 'Fira Code', monospace; font-size: 1.2rem; color: var(--text-muted); }
+        .btn-neon-outline {
+            background-color: transparent; border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan); padding: 0.5rem 1.2rem; border-radius: 4px;
+            cursor: pointer; font-family: 'Fira Code', monospace; font-size: 0.9rem;
+            transition: all 0.2s ease; text-decoration: none; display: inline-block;
+            text-align: center; text-transform: uppercase;
+        }
+        .btn-neon-outline:hover { background-color: rgba(0,255,240,0.05); box-shadow: 0 0 10px rgba(0,255,240,0.25); } /* Halved alpha */
+        #app { flex-grow: 1; padding: 0 2rem 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+        button { border: none; cursor: pointer; font-family: 'Fira Code', monospace; font-size: 0.9rem; transition: all 0.2s ease; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">[ SW_HUB ]</a>
+        <button id="login-btn" class="btn-neon-outline">[ LOGIN ]</button>
+    </nav>
+    <header class="hero">
+        <h1>SOFTWARE HUB</h1>
+        <p>// ACCESS THE ARSENAL</p>
+    </header>
+    <div id="app"></div>
+    <script type="module" src="/src/app.js"></script>
+</body>
+</html>
+
+// FILE: softhub/frontend/src/components/LoginModal.js
+export function renderLoginModal(onLogin, onClose) {
+    const existingModal = document.getElementById("login-modal");
+    if (existingModal) {
+        existingModal.remove();
+        document.getElementById("modal-styles")?.remove();
+    }
+
+    const style = document.createElement("style");
+    style.id = "modal-styles";
+    style.textContent = `
+        .login-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Reduced alpha */
+            display: flex; justify-content: center; align-items: center; z-index: 100;
+        }
+        .login-modal-content {
+            background-color: var(--surface); border: 1px solid var(--border);
+            padding: 2rem; border-radius: 8px; width: 90%; max-width: 400px;
+            box-shadow: 0 0 20px rgba(0,255,240,0.08); /* Reduced alpha */
+            position: relative;
+        }
+        .login-modal-content h2 {
+            font-family: 'Orbitron', sans-serif; color: var(--neon-cyan);
+            margin-bottom: 1.5rem; text-align: center;
+            text-shadow: 0 0 5px rgba(0,255,240,0.2); /* Reduced opacity */
+        }
+        .login-modal-content label {
+            display: block; margin-bottom: 0.5rem; color: var(--text);
+            font-size: 0.9rem;
+        }
+        .login-modal-content input[type="text"],
+        .login-modal-content input[type="password"] {
+            width: 100%; padding: 0.8rem; margin-bottom: 1rem;
+            background-color: var(--bg); border: 1px solid var(--border);
+            color: var(--text); border-radius: 4px; font-family: 'Fira Code', monospace;
+            font-size: 0.9rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .login-modal-content input[type="text"]:focus,
+        .login-modal-content input[type="password"]:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 8px rgba(0,255,240,0.1); /* Reduced alpha */
+        }
+        .login-modal-content button.submit-btn {
+            width: 100%; padding: 0.8rem; background-color: var(--neon-cyan);
+            color: var(--bg); border: none; border-radius: 4px;
+            font-family: 'Fira Code', monospace; font-size: 1rem; cursor: pointer;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 1rem;
+        }
+        .login-modal-content button.submit-btn:hover {
+            background-color: #00e6d6;
+            box-shadow: 0 0 10px rgba(0,255,240,0.25); /* Halved alpha */
+        }
+        .login-modal-content .error-message {
+            color: var(--danger); text-align: center; margin-top: 1rem;
+            font-size: 0.85rem; text-shadow: 0 0 2px rgba(255,62,62,0.2); /* Reduced opacity */
+        }
+        .login-modal-content .close-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: transparent; color: var(--text-muted);
+            font-size: 1.5rem; border: none; cursor: pointer;
+            line-height: 1; padding: 0 5px;
+        }
+        .login-modal-content .close-btn:hover {
+            color: var(--neon-cyan); text-shadow: 0 0 5px rgba(0,255,240,0.2); /* Reduced opacity */
+        }
+    `;
+    document.head.appendChild(style);
+
+    const overlay = document.createElement("div");
+    overlay.className = "login-modal-overlay";
+    overlay.id = "login-modal";
+
+    const content = document.createElement("div");
+    content.className = "login-modal-content";
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "close-btn";
+    closeButton.innerHTML = "&times;";
+    closeButton.onclick = onClose;
+    content.appendChild(closeButton);
+
+    const title = document.createElement("h2");
+    title.textContent = "[ AUTHORIZATION REQUIRED ]";
+    content.appendChild(title);
+
+    const form = document.createElement("form");
+
+    const usernameLabel = document.createElement("label");
+    usernameLabel.textContent = "USERNAME:";
+    const usernameInput = document.createElement("input");
+    usernameInput.type = "text";
+    usernameInput.id = "login-username";
+    usernameInput.value = "admin"; // Prefill for convenience
+    form.appendChild(usernameLabel);
+    form.appendChild(usernameInput);
+
+    const passwordLabel = document.createElement("label");
+    passwordLabel.textContent = "PASSWORD:";
+    const passwordInput = document.createElement("input");
+    passwordInput.type = "password";
+    passwordInput.id = "login-password";
+    passwordInput.value = "admin"; // Prefill for convenience
+    form.appendChild(passwordLabel);
+    form.appendChild(passwordInput);
+
+    const errorMessage = document.createElement("p");
+    errorMessage.className = "error-message";
+    form.appendChild(errorMessage);
+
+    const submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.className = "submit-btn";
+    submitButton.textContent = "[ AUTHENTICATE ]";
+    form.appendChild(submitButton);
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        errorMessage.textContent = "";
+
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                onLogin(data.token);
+                onClose(); // Close modal after successful login
+            } else if (response.status === 401) {
+                errorMessage.textContent = "// INVALID CREDENTIALS";
+            } else {
+                errorMessage.textContent = `// LOGIN FAILED: ${response.statusText}`;
+            }
+        } catch (error) {
+            errorMessage.textContent = "// CONNECTION FAILED";
+            console.error("Login fetch error:", error);
+        }
+    };
+
+    content.appendChild(form);
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    // Close on overlay click
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+            onClose();
+        }
+    });
+
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === "Escape") {
+            onClose();
+            document.removeEventListener("keydown", handleEscape);
+        }
+    };
+    document.addEventListener("keydown", handleEscape);
+
+    // Focus on first input
+    usernameInput.focus();
+}
+
+// FILE: softhub/frontend/src/components/AdminPanel.js
+export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory, onDeleteCategory) {
+    const existingStyle = document.getElementById("admin-styles");
+    if (existingStyle) {
+        existingStyle.remove();
+    }
+
+    const style = document.createElement("style");
+    style.id = "admin-styles";
+    style.textContent = `
+        .admin-panel {
+            background-color: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; padding: 2rem; margin-bottom: 2rem;
+            box-shadow: 0 0 20px rgba(0,255,240,0.06); /* Reduced alpha */
+        }
+        .admin-panel h2 {
+            font-family: 'Orbitron', sans-serif; color: var(--neon-cyan);
+            margin-bottom: 1.5rem; text-align: center;
+            text-shadow: 0 0 5px rgba(0,255,240,0.2); /* Reduced opacity */
+        }
+        .admin-section {
+            border: 1px dashed var(--border); border-radius: 4px; padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .admin-section h3 {
+            font-family: 'Fira Code', monospace; color: var(--text);
+            margin-bottom: 1rem; text-align: center;
+            font-size: 1.1rem;
+        }
+        .admin-form {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+        }
+        .admin-form .form-group {
+            display: flex; flex-direction: column;
+        }
+        .admin-form .full-width {
+            grid-column: 1 / -1;
+        }
+        .admin-form label {
+            margin-bottom: 0.5rem; color: var(--text); font-size: 0.9rem;
+        }
+        .admin-panel input[type="text"],
+        .admin-panel input[type="url"],
+        .admin-panel textarea,
+        .admin-panel select {
+            width: 100%; padding: 0.8rem; background-color: var(--bg);
+            border: 1px solid var(--border); color: var(--text);
+            border-radius: 4px; font-family: 'Fira Code', monospace;
+            font-size: 0.9rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .admin-panel input[type="text"]:focus,
+        .admin-panel input[type="url"]:focus,
+        .admin-panel textarea:focus,
+        .admin-panel select:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 8px rgba(0,255,240,0.1); /* Reduced alpha */
+        }
+        .admin-panel textarea {
+            resize: vertical; min-height: 80px;
+        }
+        .admin-panel button {
+            padding: 0.8rem 1.5rem; border-radius: 4px;
+            font-size: 0.95rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .admin-panel .add-btn {
+            background-color: var(--neon-cyan); color: var(--bg);
+            border: 1px solid var(--neon-cyan);
+            box-shadow: 0 0 8px rgba(0,255,240,0.1); /* Reduced alpha */
+        }
+        .admin-panel .add-btn:hover {
+            background-color: #00e6d6;
+            box-shadow: 0 0 10px rgba(0,255,240,0.25); /* Halved alpha */
+        }
+        .admin-panel .logout-btn {
+            background-color: transparent; color: var(--danger);
+            border: 1px solid var(--danger); margin-top: 1rem;
+            box-shadow: 0 0 8px rgba(255,62,62,0.1); /* Reduced alpha */
+        }
+        .admin-panel .logout-btn:hover {
+            background-color: rgba(255,62,62,0.1);
+            box-shadow: 0 0 10px rgba(255,62,62,0.25); /* Halved alpha */
+        }
+        .admin-panel .category-list {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem; margin-bottom: 1.5rem;
+        }
+        .admin-panel .category-tag {
+            font-family: 'Fira Code', monospace; font-size: 0.8rem;
+            border: 1px solid var(--border); border-radius: 4px;
+            padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;
+            background-color: var(--bg); color: var(--text);
+            box-shadow: 0 0 5px rgba(0,255,240,0.06); /* Reduced alpha */
+        }
+        .admin-panel .category-tag button {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 0.9rem; cursor: pointer; padding: 0 2px; line-height: 1;
+        }
+        .admin-panel .category-tag button:hover {
+            color: var(--danger); opacity: 1;
+        }
+        .admin-panel .add-category-input-group {
+            display: flex; gap: 8px; margin-bottom: 1rem;
+        }
+        .admin-panel .add-category-input-group input {
+            flex-grow: 1;
+        }
+        .admin-panel .add-category-input-group button {
+            padding: 0.6rem 1rem; font-size: 0.9rem;
+        }
+        .admin-panel .error-message {
+            color: var(--danger); text-align: center; margin-top: 1rem;
+            font-size: 0.85rem; text-shadow: 0 0 2px rgba(255,62,62,0.2); /* Reduced opacity */
+        }
+    `;
+    document.head.appendChild(style);
+
+    const panel = document.createElement("div");
+    panel.className = "admin-panel";
+
+    const title = document.createElement("h2");
+    title.textContent = "[ ADMIN PANEL ]";
+    panel.appendChild(title);
+
+    // --- MANAGE CATEGORIES SECTION ---
+    const categorySection = document.createElement("div");
+    categorySection.className = "admin-section";
+    const categoryTitle = document.createElement("h3");
+    categoryTitle.textContent = "[ MANAGE CATEGORIES ]";
+    categorySection.appendChild(categoryTitle);
+
+    const categoryList = document.createElement("div");
+    categoryList.className = "category-list";
+    function renderCategoryTags() {
+        categoryList.innerHTML = "";
+        if (categories.length === 0) {
+            categoryList.innerHTML = `<span style="color:var(--text-muted);">No categories added yet.</span>`;
+            return;
+        }
+        categories.forEach(cat => {
+            const tag = document.createElement("span");
+            tag.className = "category-tag";
+            tag.textContent = cat;
+            const deleteBtn = document.createElement("button");
+            deleteBtn.innerHTML = "&times;";
+            deleteBtn.title = `Delete category ${cat}`;
+            deleteBtn.onclick = () => onDeleteCategory(cat);
+            tag.appendChild(deleteBtn);
+            categoryList.appendChild(tag);
+        });
+    }
+    renderCategoryTags();
+    categorySection.appendChild(categoryList);
+
+    const addCategoryInputGroup = document.createElement("div");
+    addCategoryInputGroup.className = "add-category-input-group";
+    const newCategoryInput = document.createElement("input");
+    newCategoryInput.type = "text";
+    newCategoryInput.placeholder = "New category name";
+    newCategoryInput.id = "new-category-name";
+    const addCategoryBtn = document.createElement("button");
+    addCategoryBtn.className = "btn-neon-outline add-btn";
+    addCategoryBtn.textContent = "[ ADD ]";
+    addCategoryBtn.onclick = () => {
+        const name = newCategoryInput.value.trim();
+        if (name) {
+            onAddCategory(name);
+            newCategoryInput.value = "";
+        }
+    };
+    addCategoryInputGroup.appendChild(newCategoryInput);
+    addCategoryInputGroup.appendChild(addCategoryBtn);
+    categorySection.appendChild(addCategoryInputGroup);
+
+    panel.appendChild(categorySection);
+
+    // --- ADD SOFTWARE SECTION ---
+    const softwareSection = document.createElement("div");
+    softwareSection.className = "admin-section";
+    const softwareTitle = document.createElement("h3");
+    softwareTitle.textContent = "[ ADD SOFTWARE ]";
+    softwareSection.appendChild(softwareTitle);
+
+    const form = document.createElement("form");
+    form.className = "admin-form";
+
+    const fields = [
+        { id: "name", label: "NAME:", type: "text", placeholder: "e.g., VS Code" },
+        { id: "version", label: "VERSION:", type: "text", placeholder: "e.g., 1.85.1" },
+        { id: "url", label: "DOWNLOAD URL:", type: "url", placeholder: "https://example.com/software.exe" },
+        { id: "category", label: "CATEGORY:", type: "select", placeholder: "Select category" },
+        { id: "description", label: "DESCRIPTION:", type: "textarea", placeholder: "A brief description of the software...", className: "full-width" },
+    ];
+
+    const inputElements = {};
+
+    fields.forEach(field => {
+        const group = document.createElement("div");
+        group.className = `form-group ${field.className || ''}`;
+
+        const label = document.createElement("label");
+        label.htmlFor = `admin-soft-${field.id}`;
+        label.textContent = field.label;
+        group.appendChild(label);
+
+        let input;
+        if (field.type === "select") {
+            input = document.createElement("select");
+            input.id = `admin-soft-${field.id}`;
+            const defaultOption = document.createElement("option");
+            defaultOption.value = "";
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            defaultOption.textContent = field.placeholder;
+            input.appendChild(defaultOption);
+
+            categories.forEach(cat => {
+                const option = document.createElement("option");
+                option.value = cat;
+                option.textContent = cat;
+                input.appendChild(option);
+            });
+        } else if (field.type === "textarea") {
+            input = document.createElement("textarea");
+            input.id = `admin-soft-${field.id}`;
+            input.placeholder = field.placeholder;
+        } else {
+            input = document.createElement("input");
+            input.type = field.type;
+            input.id = `admin-soft-${field.id}`;
+            input.placeholder = field.placeholder;
+        }
+        inputElements[field.id] = input;
+        group.appendChild(input);
+        form.appendChild(group);
+    });
+
+    const errorMessage = document.createElement("p");
+    errorMessage.className = "error-message full-width";
+    form.appendChild(errorMessage);
+
+    const submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.className = "add-btn full-width";
+    submitButton.textContent = "[ ADD SOFTWARE ]";
+    form.appendChild(submitButton);
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        errorMessage.textContent = "";
+
+        const newSoftware = {
+            name: inputElements.name.value.trim(),
+            version: inputElements.version.value.trim(),
+            category: inputElements.category.value.trim(),
+            url: inputElements.url.value.trim(),
+            description: inputElements.description.value.trim(),
+        };
+
+        if (!newSoftware.name || !newSoftware.version || !newSoftware.category || !newSoftware.url || !newSoftware.description) {
+            errorMessage.textContent = "// ALL FIELDS ARE REQUIRED";
+            return;
+        }
+
+        try {
+            await onAdd(newSoftware);
+            resetForm();
+        } catch (errorMsg) {
+            errorMessage.textContent = errorMsg;
+        }
+    };
+
+    softwareSection.appendChild(form);
+    panel.appendChild(softwareSection);
+
+    // Logout Button
+    const logoutBtn = document.createElement("button");
+    logoutBtn.className = "logout-btn full-width";
+    logoutBtn.textContent = "[ LOGOUT ]";
+    logoutBtn.onclick = onLogout;
+    panel.appendChild(logoutBtn);
+
+    const resetForm = () => {
+        form.reset();
+        errorMessage.textContent = "";
+        // Manually reset select to placeholder if needed
+        inputElements.category.value = ""; // This should select the placeholder if its value is empty string
+        renderCategoryTags(); // Re-render categories if they might have changed
+    };
+
+    return { element: panel, resetForm, renderCategoryTags }; // Expose renderCategoryTags for app.js to update
+}
+
+// FILE: softhub/frontend/src/app.js
+import { renderSoftwareGrid } from "./components/SoftwareGrid.js";
+import { renderCategoryFilter } from "./components/CategoryFilter.js";
+import { renderLoginModal } from "./components/LoginModal.js";
+import { renderAdminPanel } from "./components/AdminPanel.js";
+
+let allSoftware = [];
+let categories = [];
+let activeCategory = "All";
+let authToken = sessionStorage.getItem("sw_token") || null;
+let isLoggedIn = !!authToken;
+let adminPanelInstance = null;
+let loginModalInstance = null; // Track login modal instance
+
+async function loadData() {
+    try {
+        const [swRes, catRes] = await Promise.all([
+            fetch("/api/software"),
+            fetch("/api/categories")
+        ]);
+
+        if (!swRes.ok || !catRes.ok) {
+            throw new Error(`Failed to load data: ${swRes.statusText}, ${catRes.statusText}`);
+        }
+
+        allSoftware = await swRes.json();
+        const rawCategories = await catRes.json();
+        categories = ["All", ...rawCategories.map(c => c.name)]; // Ensure "All" is first and consistent structure
+    } catch (error) {
+        console.error("Error loading initial data:", error);
+        // Display a message to the user if needed
+    }
+}
+
+function render() {
+    const root = document.getElementById("app");
+    root.innerHTML = ""; // Clear existing content
+
+    // Update login/logout button in navbar
+    const loginBtn = document.getElementById("login-btn");
+    if (loginBtn) {
+        loginBtn.textContent = isLoggedIn ? "[ LOGOUT ]" : "[ LOGIN ]";
+        loginBtn.onclick = isLoggedIn ? logout : showLoginModal;
+    }
+
+    if (isLoggedIn) {
+        // Pass all required arguments to renderAdminPanel
+        adminPanelInstance = renderAdminPanel(onAddSoftware, logout, categories.filter(c => c !== "All"), onAddCategory, onDeleteCategory);
+        root.appendChild(adminPanelInstance.element);
+    }
+
+    // Render category filter
+    root.appendChild(renderCategoryFilter(categories, activeCategory, onCategorySelect));
+
+    // Filter software based on active category
+    const filtered = activeCategory === "All" ? allSoftware : allSoftware.filter(s => s.category === activeCategory);
+    root.appendChild(renderSoftwareGrid(filtered, onDeleteSoftware, isLoggedIn));
+}
+
+// Event Handlers
+function onCategorySelect(category) {
+    activeCategory = category;
+    render();
+}
+
+// AUTH FUNCTIONS
+function showLoginModal() {
+    loginModalInstance = renderLoginModal(login, dismissLoginModal);
+}
+
+function dismissLoginModal() {
+    document.getElementById("login-modal")?.remove();
+    document.getElementById("modal-styles")?.remove();
+    loginModalInstance = null;
+}
+
+function login(token) {
+    authToken = token;
+    sessionStorage.setItem("sw_token", token);
+    isLoggedIn = true;
+    loadData().then(render); // Reload data and re-render after login
+}
+
+function logout() {
+    authToken = null;
+    sessionStorage.removeItem("sw_token");
+    isLoggedIn = false;
+    loadData().then(render); // Reload data and re-render after logout
+}
+
+// SOFTWARE CRUD (Auth protected)
+async function onAddSoftware(software) {
+    try {
+        const response = await fetch("/api/software", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
+            },
+            body: JSON.stringify(software)
+        });
+
+        if (response.status === 201) {
+            await loadData();
+            render();
+            if (adminPanelInstance) adminPanelInstance.resetForm();
+        } else if (response.status === 401) {
+            alert("// SESSION EXPIRED");
+            logout();
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `// FAILED TO ADD SOFTWARE: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error("Add software error:", error);
+        throw new Error(error.message || "// CONNECTION FAILED");
+    }
+}
+
+async function onDeleteSoftware(id) {
+    if (!confirm("// CONFIRM DELETION?")) return;
+    try {
+        const response = await fetch(`/api/software/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${authToken}`
+            }
+        });
+
+        if (response.status === 200) {
+            await loadData();
+            render();
+        } else if (response.status === 401) {
+            alert("// SESSION EXPIRED");
+            logout();
+        } else {
+            const errorData = await response.json();
+            alert(errorData.message || `// FAILED TO DELETE SOFTWARE: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error("Delete software error:", error);
+        alert("// CONNECTION FAILED");
+    }
+}
+
+// CATEGORY CRUD (Auth protected)
+async function onAddCategory(name) {
+    try {
+        const response = await fetch("/api/categories", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ name })
+        });
+
+        if (response.status === 201) {
+            await loadData();
+            render();
+            if (adminPanelInstance) adminPanelInstance.renderCategoryTags(); // Update category list in admin panel
+        } else if (response.status === 409) {
+            alert("// CATEGORY ALREADY EXISTS");
+        } else if (response.status === 401) {
+            alert("// SESSION EXPIRED");
+            logout();
+        } else {
+            const errorData = await response.json();
+            alert(errorData.message || `// FAILED TO ADD CATEGORY: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error("Add category error:", error);
+        alert("// CONNECTION FAILED");
+    }
+}
+
+async function onDeleteCategory(name) {
+    if (!confirm(`// CONFIRM DELETION OF CATEGORY: "${name}"?`)) return;
+    try {
+        const response = await fetch(`/api/categories/${encodeURIComponent(name)}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${authToken}`
+            }
+        });
+
+        if (response.status === 200) {
+            await loadData();
+            render();
+            if (adminPanelInstance) adminPanelInstance.renderCategoryTags(); // Update category list in admin panel
+        } else if (response.status === 401) {
+            alert("// SESSION EXPIRED");
+            logout();
+        } else {
+            const errorData = await response.json();
+            alert(errorData.message || `// FAILED TO DELETE CATEGORY: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error("Delete category error:", error);
+        alert("// CONNECTION FAILED");
+    }
+}
+
+
+// Initial load and render
+loadData().then(render);
+
+// Placeholder for SoftwareGrid (Full implementation not provided, so keeping a minimal structure)
+export function renderSoftwareGrid(software, onDelete, isLoggedIn) {
+    const container = document.createElement("div");
+    container.className = "software-grid-container";
+    container.innerHTML = `
+        <style>
+            .software-grid-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1.5rem;
+                margin-top: 2rem;
+            }
+            .software-card {
+                background-color: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1.5rem;
+                box-shadow: 0 0 15px rgba(0,255,240,0.06); /* Reduced alpha */
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                position: relative;
+            }
+            .software-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0 20px rgba(0,255,240,0.1); /* Reduced alpha */
+            }
+            .software-card h3 {
+                font-family: 'Orbitron', sans-serif;
+                color: var(--neon-cyan);
+                margin-bottom: 0.5rem;
+                font-size: 1.25rem;
+                text-shadow: 0 0 4px rgba(0,255,240,0.2); /* Reduced opacity */
+            }
+            .software-card p {
+                font-size: 0.9rem;
+                color: var(--text-muted);
+                margin-bottom: 0.8rem;
+            }
+            .software-card .card-category {
+                font-size: 0.8rem;
+                color: var(--text);
+                background-color: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                padding: 3px 8px;
+                display: inline-block;
+                margin-bottom: 1rem;
+            }
+            .software-card .card-description {
+                flex-grow: 1;
+                font-size: 0.95rem;
+                color: var(--text);
+                margin-bottom: 1rem;
+            }
+            .software-card .card-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 1rem;
+            }
+            .software-card .download-btn {
+                background-color: var(--neon-cyan);
+                color: var(--bg);
+                padding: 0.6rem 1rem;
+                border-radius: 4px;
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: background-color 0.2s ease, box-shadow 0.2s ease;
+                box-shadow: 0 0 8px rgba(0,255,240,0.1); /* Reduced alpha */
+            }
+            .software-card .download-btn:hover {
+                background-color: #00e6d6;
+                box-shadow: 0 0 10px rgba(0,255,240,0.25); /* Halved alpha */
+            }
+            .software-card .delete-btn {
+                background: transparent;
+                border: 1px solid var(--danger);
+                color: var(--danger);
+                padding: 0.6rem 1rem;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                cursor: pointer;
+                transition: background-color 0.2s ease, box-shadow 0.2s ease;
+                box-shadow: 0 0 8px rgba(255,62,62,0.1); /* Reduced alpha */
+            }
+            .software-card .delete-btn:hover {
+                background-color: rgba(255,62,62,0.1);
+                box-shadow: 0 0 10px rgba(255,62,62,0.25); /* Halved alpha */
+            }
+        </style>
+    `;
+
+    if (software.length === 0) {
+        const noSoftwareMessage = document.createElement("p");
+        noSoftwareMessage.style.gridColumn = "1 / -1";
+        noSoftwareMessage.style.textAlign = "center";
+        noSoftwareMessage.style.color = "var(--text-muted)";
+        noSoftwareMessage.textContent = "// NO SOFTWARE FOUND IN THIS CATEGORY.";
+        container.appendChild(noSoftwareMessage);
+        return container;
+    }
+
+    software.forEach(soft => {
+        const card = document.createElement("div");
+        card.className = "software-card";
+        card.innerHTML = `
+            <h3>${soft.name}</h3>
+            <p>Version: ${soft.version}</p>
+            <span class="card-category">${soft.category}</span>
+            <p class="card-description">${soft.description}</p>
+            <div class="card-actions">
+                <a href="${soft.url}" target="_blank" class="download-btn">[ DOWNLOAD ]</a>
+                ${isLoggedIn ? `<button class="delete-btn" data-id="${soft.id}">[ DELETE ]</button>` : ''}
+            </div>
+        `;
+        if (isLoggedIn) {
+            const deleteButton = card.querySelector(".delete-btn");
+            if (deleteButton) {
+                deleteButton.onclick = () => onDelete(soft.id);
+            }
+        }
+        container.appendChild(card);
+    });
+    return container;
+}
+
+// Placeholder for CategoryFilter (Full implementation not provided, so keeping a minimal structure)
+export function renderCategoryFilter(categories, activeCategory, onSelect) {
+    const container = document.createElement("div");
+    container.className = "category-filter-container";
+    container.innerHTML = `
+        <style>
+            .category-filter-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-bottom: 2rem;
+                justify-content: center;
+            }
+            .category-filter-btn {
+                background-color: transparent;
+                border: 1px solid var(--border);
+                color: var(--text-muted);
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .category-filter-btn:hover {
+                border-color: var(--neon-cyan);
+                color: var(--neon-cyan);
+                box-shadow: 0 0 8px rgba(0,255,240,0.1); /* Reduced alpha */
+            }
+            .category-filter-btn.active {
+                background-color: var(--neon-cyan);
+                color: var(--bg);
+                border-color: var(--neon-cyan);
+                box-shadow: 0 0 10px rgba(0,255,240,0.25); /* Halved alpha */
+            }
+            .category-filter-btn.active:hover {
+                background-color: #00e6d6;
+            }
+        </style>
+    `;
+
+    categories.forEach(category => {
+        const button = document.createElement("button");
+        button.className = `category-filter-btn ${category === activeCategory ? 'active' : ''}`;
+        button.textContent = `[ ${category.toUpperCase()} ]`;
+        button.onclick = () => onSelect(category);
+        container.appendChild(button);
+    });
+    return container;
+}

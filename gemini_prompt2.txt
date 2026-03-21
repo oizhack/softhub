@@ -1,0 +1,179 @@
+You are a frontend engineer specializing in vanilla JavaScript, HTML, and CSS.
+Rewrite the following files with the described changes.
+Return each file as a separate fenced code block preceded by // FILE: <relative path>
+
+CHANGES NEEDED:
+
+1. LoginModal.js — After successful login, the modal must close automatically (call onClose after calling onLogin).
+
+2. AdminPanel.js — Major changes:
+   - New signature: renderAdminPanel(onAdd, onLogout, categories, onAddCategory, onDeleteCategory)
+   - Split into TWO sections inside the panel:
+     A) "[ MANAGE CATEGORIES ]" section (collapsible or always visible, at top):
+        - Shows a list of existing categories as tags/chips with a small "x" delete button on each
+        - Has an input + "ADD" button to add a new category
+        - Calls onAddCategory(name) on add, onDeleteCategory(name) on delete
+        - Category tag style: Fira Code, small, border 1px solid var(--border), border-radius 4px, padding 2px 8px, display inline-flex, align-items center, gap 4px
+        - Delete "x" on tag: small, color var(--text-muted), background transparent, border none, cursor pointer
+     B) "[ ADD SOFTWARE ]" section (below):
+        - Same fields as before BUT category field is now a <select> dropdown populated from the categories array
+        - Select style: same as other inputs (bg var(--bg), border var(--border), color var(--text), font Fira Code)
+        - First option is placeholder: <option value="" disabled selected>Select category</option>
+        - Then one <option> per category in the categories array
+
+3. app.js — Changes:
+   - Add state: let categories = [] (already there but ensure it's module-level)
+   - Pass categories to renderAdminPanel: renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory)
+   - Add onAddCategory(name) async function:
+       POST /api/categories with body { name } and Bearer auth header
+       on 201: await loadData(); render()
+       on 409: alert("// CATEGORY ALREADY EXISTS")
+       on 401: alert("// SESSION EXPIRED"); logout()
+   - Add onDeleteCategory(name) async function:
+       DELETE /api/categories/<encodeURIComponent(name)> with Bearer auth header
+       on 200: await loadData(); render()
+       on 401: alert("// SESSION EXPIRED"); logout()
+
+4. Reduce shine across ALL files — make glows more subtle:
+   - text-shadow: change opacity from 0.6-0.8 to 0.2 max, or remove entirely on small elements
+   - box-shadow glows: cut all rgba alpha values by 60% (e.g. 0.15 -> 0.06, 0.2 -> 0.08, 0.4 -> 0.15)
+   - Background grid in index.html: reduce opacity from 0.03 to 0.015
+   - Hero h1 text-shadow: reduce from 0 0 15px rgba(0,255,240,0.8) to 0 0 6px rgba(0,255,240,0.25)
+   - Navbar brand text-shadow: remove or reduce to 0 0 4px rgba(0,255,240,0.2)
+   - Button hover box-shadows: halve all alpha values
+
+---
+
+CURRENT FILE CONTENTS:
+
+// FILE: softhub/frontend/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --border: #1e1e2e;
+            --neon-cyan: #00fff0;
+            --neon-magenta: #ff00aa;
+            --text: #c9d1d9;
+            --text-muted: #6e7681;
+            --danger: #ff3e3e;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                linear-gradient(0deg, transparent 95%, rgba(0,255,240,0.03) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(0,255,240,0.03) 95%);
+            background-size: 20px 20px;
+        }
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem; background-color: rgba(10,10,15,0.8);
+            backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 20;
+        }
+        .navbar-brand {
+            font-family: 'Orbitron', sans-serif; color: var(--neon-cyan);
+            font-size: 1.5rem; text-decoration: none;
+            text-shadow: 0 0 8px rgba(0,255,240,0.6);
+        }
+        .hero { text-align: center; padding: 4rem 1rem; margin-bottom: 3rem; }
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif; font-size: 3.5rem;
+            color: var(--neon-cyan); margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px rgba(0,255,240,0.8); letter-spacing: 2px;
+        }
+        .hero p { font-family: 'Fira Code', monospace; font-size: 1.2rem; color: var(--text-muted); }
+        .btn-neon-outline {
+            background-color: transparent; border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan); padding: 0.5rem 1.2rem; border-radius: 4px;
+            cursor: pointer; font-family: 'Fira Code', monospace; font-size: 0.9rem;
+            transition: all 0.2s ease; text-decoration: none; display: inline-block;
+            text-align: center; text-transform: uppercase;
+        }
+        .btn-neon-outline:hover { background-color: rgba(0,255,240,0.1); box-shadow: 0 0 10px rgba(0,255,240,0.5); }
+        #app { flex-grow: 1; padding: 0 2rem 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+        button { border: none; cursor: pointer; font-family: 'Fira Code', monospace; font-size: 0.9rem; transition: all 0.2s ease; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">[ SW_HUB ]</a>
+        <button id="login-btn" class="btn-neon-outline">[ LOGIN ]</button>
+    </nav>
+    <header class="hero">
+        <h1>SOFTWARE HUB</h1>
+        <p>// ACCESS THE ARSENAL</p>
+    </header>
+    <div id="app"></div>
+    <script type="module" src="/src/app.js"></script>
+</body>
+</html>
+
+// FILE: softhub/frontend/src/components/LoginModal.js
+export function renderLoginModal(onLogin, onClose) {
+    // ... (inject styles, build DOM)
+    // On submit: fetch POST /api/auth/login
+    // On 200: call onLogin(data.token) then onClose() to dismiss the modal
+    // On 401: show "// INVALID CREDENTIALS"
+    // On error: show "// CONNECTION FAILED"
+    // Full current implementation with all styles inline via style element id="modal-styles"
+    // Escape key and clicking overlay also call onClose
+}
+
+// FILE: softhub/frontend/src/components/AdminPanel.js
+// Current signature: renderAdminPanel(onAdd, onLogout)
+// Returns { element, resetForm }
+// Has form with: name, version, category (text input), url, description
+// Full implementation with styles injected via style element id="admin-styles"
+
+// FILE: softhub/frontend/src/app.js
+import { renderSoftwareGrid } from "./components/SoftwareGrid.js";
+import { renderCategoryFilter } from "./components/CategoryFilter.js";
+import { renderLoginModal } from "./components/LoginModal.js";
+import { renderAdminPanel } from "./components/AdminPanel.js";
+
+let allSoftware = [];
+let categories = [];
+let activeCategory = "All";
+let authToken = sessionStorage.getItem("sw_token") || null;
+let isLoggedIn = !!authToken;
+let adminPanelInstance = null;
+
+async function loadData() {
+  const [swRes, catRes] = await Promise.all([fetch("/api/software"), fetch("/api/categories")]);
+  allSoftware = await swRes.json();
+  categories = await catRes.json();
+}
+
+function render() {
+  const root = document.getElementById("app");
+  root.innerHTML = "";
+  if (isLoggedIn) {
+    adminPanelInstance = renderAdminPanel(onAdd, logout);  // <-- needs categories + category handlers
+    root.appendChild(adminPanelInstance.element);
+  }
+  root.appendChild(renderCategoryFilter(categories, activeCategory, onCategorySelect));
+  const filtered = activeCategory === "All" ? allSoftware : allSoftware.filter(s => s.category === activeCategory);
+  root.appendChild(renderSoftwareGrid(filtered, onDelete, isLoggedIn));
+}
+// ... rest of app.js
+
+---
+
+Return all 4 files completely rewritten. Do NOT omit any implementation.
+All styles must be complete and injected via style elements (or in index.html style tag).

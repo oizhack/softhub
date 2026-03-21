@@ -1,0 +1,979 @@
+// FILE: softhub/frontend/index.html
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --border: #1e1e2e;
+            --neon-cyan: #00fff0;
+            --neon-magenta: #ff00aa;
+            --text: #c9d1d9;
+            --text-muted: #6e7681;
+            --danger: #ff3e3e;
+        }
+
+        /* Basic Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            
+            /* Subtle background grid/scanline effect */
+            background-image: 
+                linear-gradient(0deg, transparent 95%, rgba(0,255,240,0.03) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(0,255,240,0.03) 95%);
+            background-size: 20px 20px;
+            background-repeat: repeat;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+            background-color: rgba(10,10,15,0.8); /* Slightly transparent for the grid to show through */
+            backdrop-filter: blur(5px);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .navbar-brand {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-cyan);
+            font-size: 1.5rem;
+            text-decoration: none;
+            text-shadow: 0 0 8px rgba(0,255,240,0.6);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            color: var(--neon-cyan);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px rgba(0,255,240,0.8);
+            letter-spacing: 2px;
+        }
+
+        .hero p {
+            font-family: 'Fira Code', monospace;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        /* General Button Styles (Neon Outline) */
+        .btn-neon-outline {
+            background-color: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 0.5rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .btn-neon-outline:hover {
+            background-color: rgba(0,255,240,0.1);
+            box-shadow: 0 0 10px rgba(0,255,240,0.5);
+        }
+
+        #app {
+            flex-grow: 1;
+            padding: 0 2rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">[ SW_HUB ]</a>
+        <button id="login-btn" class="btn-neon-outline">[ LOGIN ]</button>
+    </nav>
+
+    <header class="hero">
+        <h1>SOFTWARE HUB</h1>
+        <p>// ACCESS THE ARSENAL</p>
+    </header>
+
+    <div id="app">
+        <!-- SPA content will be rendered here -->
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+</body>
+</html>
+```
+
+// FILE: softhub/frontend/src/components/SoftwareGrid.js
+```js
+export function renderSoftwareGrid(items, onDelete, isAdmin) {
+    // Inject styles if not already present
+    if (!document.getElementById("sw-grid-styles")) {
+        const style = document.createElement("style");
+        style.id = "sw-grid-styles";
+        style.textContent = `
+            .sw-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .sw-card {
+                display: flex;
+                flex-direction: column;
+                border: 1px solid var(--border);
+                background-color: var(--surface);
+                border-radius: 8px;
+                padding: 1.5rem;
+                transition: border-color 0.2s, box-shadow 0.2s;
+                overflow: hidden; /* Ensure content respects border-radius */
+            }
+
+            .sw-card:hover {
+                border-color: var(--neon-cyan);
+                box-shadow: 0 0 12px rgba(0,255,240,0.15);
+            }
+
+            .sw-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 0.75rem;
+            }
+
+            .sw-card h3 {
+                font-family: 'Orbitron', sans-serif;
+                color: var(--neon-cyan);
+                margin: 0;
+                font-size: 1.1rem;
+                line-height: 1.3;
+                word-break: break-word;
+            }
+
+            .sw-card .badge {
+                background-color: rgba(0,255,240,0.1);
+                color: var(--neon-cyan);
+                border: 1px solid var(--neon-cyan);
+                border-radius: 4px;
+                padding: 2px 8px;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                white-space: nowrap;
+                margin-left: 1rem;
+            }
+
+            .sw-card p {
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                margin: 0.75rem 0;
+                line-height: 1.5;
+            }
+
+            .sw-card-footer {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-top: auto; /* Push to the bottom of the card */
+                padding-top: 1rem;
+                border-top: 1px dashed var(--border);
+            }
+
+            .sw-card .version {
+                font-family: 'Fira Code', monospace;
+                color: var(--text-muted);
+                font-size: 0.85rem;
+            }
+
+            .sw-card .download-btn {
+                background-color: var(--neon-cyan);
+                color: var(--bg);
+                font-weight: bold;
+                padding: 0.4rem 1rem;
+                border-radius: 4px;
+                text-decoration: none;
+                font-family: 'Fira Code', monospace;
+                white-space: nowrap;
+                font-size: 0.85rem;
+                transition: background-color 0.2s, box-shadow 0.2s;
+            }
+
+            .sw-card .download-btn:hover {
+                background-color: #00e6d6;
+                box-shadow: 0 0 8px rgba(0,255,240,0.4);
+            }
+
+            .sw-card .delete-btn {
+                color: var(--danger);
+                border: 1px solid var(--danger);
+                background-color: transparent;
+                padding: 0.25rem 0.6rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.8rem;
+                margin-left: auto; /* Push to the right */
+                transition: background-color 0.2s, color 0.2s;
+            }
+
+            .sw-card .delete-btn:hover {
+                background-color: var(--danger);
+                color: var(--bg);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "sw-grid";
+
+    items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "sw-card";
+
+        const header = document.createElement("div");
+        header.className = "sw-card-header";
+
+        const name = document.createElement("h3");
+        name.textContent = item.name;
+        header.appendChild(name);
+
+        const category = document.createElement("span");
+        category.className = "badge";
+        category.textContent = item.category;
+        header.appendChild(category);
+
+        card.appendChild(header);
+
+        const description = document.createElement("p");
+        description.textContent = item.description;
+        card.appendChild(description);
+
+        const footer = document.createElement("div");
+        footer.className = "sw-card-footer";
+
+        const version = document.createElement("span");
+        version.className = "version";
+        version.textContent = `v${item.version}`;
+        footer.appendChild(version);
+
+        const downloadLink = document.createElement("a");
+        downloadLink.className = "download-btn";
+        downloadLink.href = item.url;
+        downloadLink.target = "_blank";
+        downloadLink.rel = "noopener noreferrer"; // Security best practice
+        downloadLink.textContent = "[ DOWNLOAD ]";
+        footer.appendChild(downloadLink);
+
+        if (isAdmin) {
+            const deleteButton = document.createElement("button");
+            deleteButton.className = "delete-btn";
+            deleteButton.textContent = "[ DEL ]";
+            deleteButton.addEventListener("click", () => onDelete(item.id));
+            footer.appendChild(deleteButton);
+        }
+
+        card.appendChild(footer);
+        grid.appendChild(card);
+    });
+
+    return grid;
+}
+```
+
+// FILE: softhub/frontend/src/components/CategoryFilter.js
+```js
+export function renderCategoryFilter(categories, activeCategory, onSelect) {
+    const filterContainer = document.createElement("div");
+    filterContainer.className = "category-filter";
+
+    const allCategories = ["All", ...categories];
+
+    // Inject styles directly for simplicity or consider a dedicated CSS file/module
+    if (!document.getElementById("category-filter-styles")) {
+        const style = document.createElement("style");
+        style.id = "category-filter-styles";
+        style.textContent = `
+            .category-filter {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-bottom: 2rem;
+                padding: 0 1rem;
+                justify-content: center;
+                border-bottom: 1px dashed var(--border);
+                padding-bottom: 1.5rem;
+            }
+
+            .filter-btn {
+                background-color: transparent;
+                border: 1px solid var(--border);
+                color: var(--text-muted);
+                padding: 0.4rem 1rem;
+                border-radius: 20px;
+                cursor: pointer;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.85rem;
+                transition: all 0.2s ease;
+                white-space: nowrap;
+            }
+
+            .filter-btn:hover {
+                border-color: var(--neon-cyan);
+                color: var(--neon-cyan);
+            }
+
+            .filter-btn.active {
+                border-color: var(--neon-cyan);
+                color: var(--neon-cyan);
+                background-color: rgba(0,255,240,0.08);
+                box-shadow: 0 0 5px rgba(0,255,240,0.3);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    allCategories.forEach(category => {
+        const button = document.createElement("button");
+        button.className = "filter-btn";
+        button.textContent = `[ ${category.toUpperCase()} ]`;
+        if (category === activeCategory) {
+            button.classList.add("active");
+        }
+        button.addEventListener("click", () => onSelect(category));
+        filterContainer.appendChild(button);
+    });
+
+    return filterContainer;
+}
+```
+
+// FILE: softhub/frontend/src/components/LoginModal.js
+```js
+export function renderLoginModal(onLogin, onClose) {
+    // Inject styles if not already present
+    if (!document.getElementById("modal-styles")) {
+        const style = document.createElement("style");
+        style.id = "modal-styles";
+        style.textContent = `
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background-color: rgba(0,0,0,0.85);
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease-out;
+            }
+
+            .modal-box {
+                background-color: var(--surface);
+                border: 1px solid var(--neon-cyan);
+                border-radius: 8px;
+                padding: 2rem;
+                min-width: 320px;
+                max-width: 90vw;
+                box-shadow: 0 0 30px rgba(0,255,240,0.2);
+                animation: slideIn 0.3s ease-out;
+            }
+
+            .modal-box h2 {
+                font-family: 'Orbitron', sans-serif;
+                color: var(--neon-cyan);
+                margin-bottom: 1.5rem;
+                font-size: 1.1rem;
+                text-align: center;
+                text-shadow: 0 0 8px rgba(0,255,240,0.4);
+            }
+
+            .modal-box input[type="password"] {
+                width: 100%;
+                background-color: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--text);
+                padding: 0.75rem;
+                border-radius: 4px;
+                font-family: 'Fira Code', monospace;
+                box-sizing: border-box;
+                font-size: 0.9rem;
+                transition: border-color 0.2s;
+            }
+
+            .modal-box input[type="password"]:focus {
+                border-color: var(--neon-cyan);
+                outline: none;
+                box-shadow: 0 0 5px rgba(0,255,240,0.2);
+            }
+
+            .modal-error {
+                color: var(--danger);
+                font-size: 0.85rem;
+                margin-top: 0.5rem;
+                text-align: center;
+            }
+
+            .modal-box button[type="submit"] {
+                width: 100%;
+                background-color: var(--neon-cyan);
+                color: var(--bg);
+                font-weight: bold;
+                padding: 0.75rem;
+                border-radius: 4px;
+                margin-top: 1.5rem;
+                font-family: 'Orbitron', sans-serif;
+                cursor: pointer;
+                border: none;
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                transition: background-color 0.2s, box-shadow 0.2s;
+            }
+
+            .modal-box button[type="submit"]:hover {
+                background-color: #00e6d6;
+                box-shadow: 0 0 15px rgba(0,255,240,0.6);
+            }
+
+            .modal-box .cancel-text {
+                margin-top: 1rem;
+                text-align: center;
+            }
+
+            .modal-box .cancel-text span {
+                color: var(--text-muted);
+                cursor: pointer;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.85rem;
+                transition: color 0.2s;
+            }
+
+            .modal-box .cancel-text span:hover {
+                color: var(--neon-cyan);
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes slideIn {
+                from { transform: translateY(-20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const modalBox = document.createElement("div");
+    modalBox.className = "modal-box";
+
+    const title = document.createElement("h2");
+    title.textContent = "[ AUTHENTICATE ]";
+    modalBox.appendChild(title);
+
+    const passwordInput = document.createElement("input");
+    passwordInput.type = "password";
+    passwordInput.placeholder = "Enter access key...";
+    passwordInput.autofocus = true;
+    modalBox.appendChild(passwordInput);
+
+    const errorDisplay = document.createElement("div");
+    errorDisplay.className = "modal-error";
+    errorDisplay.style.visibility = "hidden"; // Use visibility to reserve space
+    modalBox.appendChild(errorDisplay);
+
+    const submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.textContent = "[ ACCESS ]";
+    modalBox.appendChild(submitButton);
+
+    const cancelText = document.createElement("p");
+    cancelText.className = "cancel-text";
+    const cancelSpan = document.createElement("span");
+    cancelSpan.textContent = "[ CANCEL ]";
+    cancelSpan.addEventListener("click", onClose);
+    cancelText.appendChild(cancelSpan);
+    modalBox.appendChild(cancelText);
+
+    overlay.appendChild(modalBox);
+
+    // Event listener for form submission (or button click)
+    submitButton.addEventListener("click", async (e) => {
+        e.preventDefault(); // Prevent default form submission if it were a form
+        errorDisplay.style.visibility = "hidden";
+        errorDisplay.textContent = "";
+
+        const password = passwordInput.value;
+        if (!password) {
+            errorDisplay.textContent = "// PASSWORD REQUIRED";
+            errorDisplay.style.visibility = "visible";
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password })
+            });
+
+            if (res.status === 200) {
+                const data = await res.json();
+                onLogin(data.token);
+                onClose(); // Close modal on successful login
+            } else if (res.status === 401) {
+                errorDisplay.textContent = "// INVALID CREDENTIALS";
+                errorDisplay.style.visibility = "visible";
+            } else {
+                errorDisplay.textContent = "// AUTHENTICATION FAILED. TRY AGAIN.";
+                errorDisplay.style.visibility = "visible";
+            }
+        } catch (error) {
+            console.error("Login fetch error:", error);
+            errorDisplay.textContent = "// CONNECTION FAILED. SERVER OFFLINE?";
+            errorDisplay.style.visibility = "visible";
+        }
+    });
+
+    // Close modal if clicking outside the modal box
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+            onClose();
+        }
+    });
+
+    // Close modal with Escape key
+    const handleKeydown = (e) => {
+        if (e.key === "Escape") {
+            onClose();
+            document.removeEventListener("keydown", handleKeydown); // Clean up
+        }
+    };
+    document.addEventListener("keydown", handleKeydown);
+    // Ensure cleanup is done on close
+    const originalOnClose = onClose;
+    onClose = () => {
+        document.removeEventListener("keydown", handleKeydown);
+        originalOnClose();
+    };
+
+
+    return overlay;
+}
+```
+
+// FILE: softhub/frontend/src/components/AdminPanel.js
+```js
+export function renderAdminPanel(onAdd, onLogout) {
+    if (!document.getElementById("admin-styles")) {
+        const style = document.createElement("style");
+        style.id = "admin-styles";
+        style.textContent = `
+            .admin-panel {
+                border: 1px solid var(--neon-magenta);
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+                background-color: rgba(255,0,170,0.04);
+                box-shadow: 0 0 15px rgba(255,0,170,0.1);
+            }
+
+            .admin-panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.25rem;
+                border-bottom: 1px dashed var(--border);
+                padding-bottom: 0.75rem;
+            }
+
+            .admin-panel h3 {
+                font-family: 'Orbitron', sans-serif;
+                color: var(--neon-magenta);
+                margin: 0;
+                font-size: 1rem;
+                text-shadow: 0 0 8px rgba(255,0,170,0.4);
+            }
+
+            .admin-panel .logout-btn {
+                font-family: 'Fira Code', monospace;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                border: 1px solid var(--border);
+                background-color: transparent;
+                cursor: pointer;
+                padding: 0.25rem 0.75rem;
+                border-radius: 4px;
+                transition: all 0.2s;
+            }
+
+            .admin-panel .logout-btn:hover {
+                border-color: var(--neon-magenta);
+                color: var(--neon-magenta);
+                background-color: rgba(255,0,170,0.1);
+            }
+
+            .admin-panel form {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .admin-panel input,
+            .admin-panel textarea {
+                background-color: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--text);
+                padding: 0.6rem 0.75rem;
+                border-radius: 4px;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.9rem;
+                width: 100%;
+                box-sizing: border-box;
+                transition: border-color 0.2s;
+            }
+
+            .admin-panel input:focus,
+            .admin-panel textarea:focus {
+                border-color: var(--neon-magenta);
+                outline: none;
+                box-shadow: 0 0 5px rgba(255,0,170,0.2);
+            }
+
+            .admin-panel textarea {
+                grid-column: span 2;
+                resize: vertical;
+            }
+
+            .admin-error {
+                color: var(--danger);
+                font-size: 0.8rem;
+                grid-column: span 2;
+                margin-top: 0.5rem;
+                text-align: center;
+            }
+
+            .admin-panel .add-btn {
+                background-color: var(--neon-magenta);
+                color: var(--bg);
+                font-weight: bold;
+                padding: 0.6rem 1.5rem;
+                border-radius: 4px;
+                font-family: 'Orbitron', sans-serif;
+                border: none;
+                cursor: pointer;
+                font-size: 0.85rem;
+                grid-column: span 2;
+                margin-top: 0.75rem;
+                text-transform: uppercase;
+                transition: background-color 0.2s, box-shadow 0.2s;
+            }
+
+            .admin-panel .add-btn:hover {
+                background-color: #e60099;
+                box-shadow: 0 0 15px rgba(255,0,170,0.6);
+            }
+
+            @media (max-width: 600px) {
+                .admin-panel form {
+                    grid-template-columns: 1fr;
+                }
+                .admin-panel textarea, .admin-panel .admin-error, .admin-panel .add-btn {
+                    grid-column: span 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const panel = document.createElement("section");
+    panel.className = "admin-panel";
+
+    const headerDiv = document.createElement("div");
+    headerDiv.className = "admin-panel-header";
+
+    const title = document.createElement("h3");
+    title.textContent = "[ ADMIN PANEL ]";
+    headerDiv.appendChild(title);
+
+    const logoutButton = document.createElement("button");
+    logoutButton.className = "logout-btn";
+    logoutButton.textContent = "[ LOGOUT ]";
+    logoutButton.addEventListener("click", onLogout);
+    headerDiv.appendChild(logoutButton);
+
+    panel.appendChild(headerDiv);
+
+    const form = document.createElement("form");
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = "Software name *";
+    nameInput.name = "name";
+
+    const versionInput = document.createElement("input");
+    versionInput.type = "text";
+    versionInput.placeholder = "v1.0.0";
+    versionInput.name = "version";
+
+    const categoryInput = document.createElement("input");
+    categoryInput.type = "text";
+    categoryInput.placeholder = "e.g. Developer Tools";
+    categoryInput.name = "category";
+
+    const urlInput = document.createElement("input");
+    urlInput.type = "url";
+    urlInput.placeholder = "Download URL *";
+    urlInput.name = "url";
+
+    const descriptionTextarea = document.createElement("textarea");
+    descriptionTextarea.rows = 2;
+    descriptionTextarea.placeholder = "Short description";
+    descriptionTextarea.name = "description";
+
+    const errorDisplay = document.createElement("div");
+    errorDisplay.className = "admin-error";
+    errorDisplay.style.visibility = "hidden";
+
+    const submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.className = "add-btn";
+    submitButton.textContent = "+ ADD SOFTWARE";
+
+    form.append(nameInput, versionInput, categoryInput, urlInput, descriptionTextarea, errorDisplay, submitButton);
+    panel.appendChild(form);
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        errorDisplay.style.visibility = "hidden";
+        errorDisplay.textContent = "";
+
+        const name = nameInput.value.trim();
+        const url = urlInput.value.trim();
+        const description = descriptionTextarea.value.trim();
+        const version = versionInput.value.trim();
+        const category = categoryInput.value.trim();
+
+        if (!name || !url) {
+            errorDisplay.textContent = "// NAME and URL are required";
+            errorDisplay.style.visibility = "visible";
+            return;
+        }
+
+        onAdd({ name, description, version, category, url });
+    });
+
+    const resetForm = () => {
+        nameInput.value = "";
+        versionInput.value = "";
+        categoryInput.value = "";
+        urlInput.value = "";
+        descriptionTextarea.value = "";
+        errorDisplay.style.visibility = "hidden";
+        errorDisplay.textContent = "";
+    };
+
+    return { element: panel, resetForm };
+}
+```
+
+// FILE: softhub/frontend/src/app.js
+```js
+import { renderSoftwareGrid } from "./components/SoftwareGrid.js";
+import { renderCategoryFilter } from "./components/CategoryFilter.js";
+import { renderLoginModal } from "./components/LoginModal.js";
+import { renderAdminPanel } from "./components/AdminPanel.js";
+
+let allSoftware = [];
+let categories = [];
+let activeCategory = "All";
+let authToken = sessionStorage.getItem("sw_token") || null;
+let isLoggedIn = !!authToken;
+let adminPanelInstance = null; // Will store { element, resetForm }
+
+async function loadData() {
+  try {
+    const [swRes, catRes] = await Promise.all([
+      fetch("/api/software"),
+      fetch("/api/categories")
+    ]);
+
+    if (!swRes.ok) throw new Error(`HTTP error! status: ${swRes.status}`);
+    if (!catRes.ok) throw new Error(`HTTP error! status: ${catRes.status}`);
+
+    allSoftware = await swRes.json();
+    categories = await catRes.json();
+  } catch (error) {
+    console.error("Failed to load initial data:", error);
+    alert("// ERROR: Could not load data. Backend offline?");
+    allSoftware = []; // Clear data to avoid rendering stale/corrupted info
+    categories = [];
+  }
+}
+
+function render() {
+  const root = document.getElementById("app");
+  root.innerHTML = ""; // Clear existing content
+
+  if (isLoggedIn) {
+    // Re-render admin panel if logged in
+    adminPanelInstance = renderAdminPanel(onAdd, logout);
+    root.appendChild(adminPanelInstance.element);
+  } else {
+    adminPanelInstance = null; // Clear instance if logged out
+  }
+
+  root.appendChild(renderCategoryFilter(categories, activeCategory, onCategorySelect));
+
+  const filtered = activeCategory === "All" ? allSoftware : allSoftware.filter(s => s.category === activeCategory);
+  root.appendChild(renderSoftwareGrid(filtered, onDelete, isLoggedIn));
+}
+
+function onCategorySelect(cat) {
+  activeCategory = cat;
+  render();
+}
+
+function showLoginModal() {
+  const modal = renderLoginModal(onLogin, () => {
+    modal.remove(); // Remove modal from DOM when closed
+  });
+  document.body.appendChild(modal);
+}
+
+function onLogin(token) {
+  sessionStorage.setItem("sw_token", token);
+  authToken = token;
+  isLoggedIn = true;
+  document.getElementById("login-btn").textContent = "[ LOGOUT ]";
+  render(); // Re-render to show admin panel
+}
+
+function logout() {
+  sessionStorage.removeItem("sw_token");
+  authToken = null;
+  isLoggedIn = false;
+  document.getElementById("login-btn").textContent = "[ LOGIN ]";
+  render(); // Re-render to hide admin panel
+}
+
+async function onAdd(data) {
+  try {
+    const res = await fetch("/api/software", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json", 
+        "Authorization": "Bearer " + authToken 
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.status === 201) {
+      await loadData(); // Reload all software to include the new one
+      render();
+      if (adminPanelInstance) adminPanelInstance.resetForm(); // Clear form
+    } else if (res.status === 401) {
+      alert("// SESSION EXPIRED. PLEASE LOG IN AGAIN.");
+      logout(); // Log out if unauthorized
+    } else {
+      const err = await res.json();
+      alert("// ERROR: " + (err.error || "Failed to add software"));
+    }
+  } catch (error) {
+    console.error("Error adding software:", error);
+    alert("// ERROR: Connection failed or server error.");
+  }
+}
+
+async function onDelete(id) {
+  if (!confirm("// CONFIRM DELETION OF SOFTWARE? THIS ACTION IS IRREVERSIBLE.")) return; // Confirmation
+
+  try {
+    const res = await fetch("/api/software/" + id, {
+      method: "DELETE",
+      headers: { 
+        "Authorization": "Bearer " + authToken 
+      }
+    });
+
+    if (res.status === 200) {
+      await loadData(); // Reload software list
+      render();
+    } else if (res.status === 401) {
+      alert("// SESSION EXPIRED. PLEASE LOG IN AGAIN.");
+      logout(); // Log out if unauthorized
+    } else {
+      const err = await res.json();
+      alert("// ERROR: " + (err.error || "Failed to delete software"));
+    }
+  } catch (error) {
+    console.error("Error deleting software:", error);
+    alert("// ERROR: Connection failed or server error.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const loginBtn = document.getElementById("login-btn");
+  loginBtn.textContent = isLoggedIn ? "[ LOGOUT ]" : "[ LOGIN ]";
+  
+  loginBtn.addEventListener("click", () => {
+    if (isLoggedIn) {
+      logout();
+    } else {
+      showLoginModal();
+    }
+  });
+
+  await loadData();
+  render();
+});
+```
