@@ -130,10 +130,13 @@ export function showEditModal({ item, categories, onUpdate }) {
 
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
-  submitBtn.className = 'em-submit-btn full-width';
+  submitBtn.className = 'em-submit-btn';
   submitBtn.style.cssText = 'width:auto;padding-left:2.5rem;padding-right:2.5rem;';
   submitBtn.textContent = 'UPDATE SOFTWARE';
-  form.appendChild(submitBtn);
+  const submitRow = document.createElement('div');
+  submitRow.className = 'full-width';
+  submitRow.appendChild(submitBtn);
+  form.appendChild(submitRow);
 
   cardInner.appendChild(form);
   cardOuter.appendChild(cardInner);

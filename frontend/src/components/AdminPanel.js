@@ -203,10 +203,13 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
 
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
-  submitBtn.className = 'vault-btn-primary full-width';
+  submitBtn.className = 'vault-btn-primary';
   submitBtn.style.cssText = 'width:auto;padding-left:2.5rem;padding-right:2.5rem;';
   submitBtn.textContent = 'ADD SOFTWARE';
-  form.appendChild(submitBtn);
+  const submitRow = document.createElement('div');
+  submitRow.className = 'full-width';
+  submitRow.appendChild(submitBtn);
+  form.appendChild(submitRow);
 
   form.onsubmit = async (e) => {
     e.preventDefault();
