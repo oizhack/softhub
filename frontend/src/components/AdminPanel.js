@@ -208,6 +208,7 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
   submitBtn.textContent = 'ADD SOFTWARE';
   const submitRow = document.createElement('div');
   submitRow.className = 'full-width';
+  submitRow.style.textAlign = 'center';
   submitRow.appendChild(submitBtn);
   form.appendChild(submitRow);
 
