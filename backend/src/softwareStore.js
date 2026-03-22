@@ -84,9 +84,15 @@ export async function deleteSoftware(id) {
 export async function updateSoftware(id, { name, description, version, category, url }) {
     if (!name?.trim()) throw new Error("name is required");
     if (!url?.trim()) throw new Error("url is required");
+    const current = await getSoftwareById(id);
+    if (!current) return null;
+    const n = name.trim(), u = url.trim(), d = description || "", v = version || "", c = category || "";
+    const unchanged = current.name === n && current.url === u && current.description === d
+        && current.version === v && current.category === c;
+    if (unchanged) return current;
     const { rows } = await pool.query(
         "UPDATE software_items SET name=$1, description=$2, version=$3, category=$4, url=$5, updated_at=NOW() WHERE id=$6 RETURNING *",
-        [name.trim(), description || "", version || "", category || "", url.trim(), id]
+        [n, d, v, c, u, id]
     );
     return rows[0] ? toItem(rows[0]) : null;
 }
