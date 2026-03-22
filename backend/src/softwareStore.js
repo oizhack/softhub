@@ -30,6 +30,9 @@ export async function initDb() {
     await pool.query(`
         ALTER TABLE software_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ
     `);
+    await pool.query(`
+        ALTER TABLE categories ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0
+    `);
     const { rowCount } = await pool.query("SELECT 1 FROM categories LIMIT 1");
     if (rowCount === 0) {
         await pool.query(`INSERT INTO categories VALUES ('Developer Tools'), ('Security'), ('Utilities')`);
@@ -98,8 +101,24 @@ export async function updateSoftware(id, { name, description, version, category,
 }
 
 export async function getAllCategories() {
-    const { rows } = await pool.query("SELECT name FROM categories ORDER BY name");
+    const { rows } = await pool.query("SELECT name FROM categories ORDER BY sort_order, name");
     return rows.map((r) => r.name);
+}
+
+export async function updateCategoryOrder(names) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        for (let i = 0; i < names.length; i++) {
+            await client.query('UPDATE categories SET sort_order = $1 WHERE name = $2', [i, names[i]]);
+        }
+        await client.query('COMMIT');
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
+    }
 }
 
 export async function addCategory(name) {

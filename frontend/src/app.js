@@ -52,7 +52,7 @@ function render() {
   }
 
   if (isLoggedIn) {
-    adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete);
+    adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete, onReorderCategories);
     root.appendChild(adminPanelInstance.element);
     root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, true, onEdit));
   } else {
@@ -169,6 +169,24 @@ async function onAddCategory(name) {
     render();
   } else if (res.status === 409) {
     alert("// CATEGORY ALREADY EXISTS");
+  } else if (res.status === 401) {
+    alert("// SESSION EXPIRED");
+    logout();
+  }
+}
+
+async function onReorderCategories(newOrder) {
+  const res = await fetch("/api/categories/order", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + authToken
+    },
+    body: JSON.stringify({ order: newOrder })
+  });
+  if (res.ok) {
+    await loadData();
+    render();
   } else if (res.status === 401) {
     alert("// SESSION EXPIRED");
     logout();

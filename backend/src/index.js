@@ -5,7 +5,7 @@ import cors from "cors";
 import { fileURLToPath } from "url";
 import authRouter, { verifyToken } from "./routes/auth.js";
 import softwareRouter from "./routes/software.js";
-import { initDb, getAllCategories, addCategory, deleteCategory } from "./softwareStore.js";
+import { initDb, getAllCategories, addCategory, deleteCategory, updateCategoryOrder } from "./softwareStore.js";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -39,6 +39,20 @@ app.delete("/api/categories/:name", async (req, res) => {
     const deleted = await deleteCategory(decodeURIComponent(req.params.name));
     if (!deleted) return res.status(404).json({ error: "category not found" });
     res.status(200).json({ name: deleted });
+});
+
+app.put("/api/categories/order", async (req, res) => {
+    if (!req.isAuthenticated) return res.status(401).json({ error: "unauthorized" });
+    const { order } = req.body;
+    if (!Array.isArray(order) || order.some(n => typeof n !== 'string')) {
+        return res.status(400).json({ error: "order must be an array of strings" });
+    }
+    try {
+        await updateCategoryOrder(order);
+        res.status(200).json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: "failed to update order" });
+    }
 });
 
 // Only start listening when run directly, not when imported by tests
