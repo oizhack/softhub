@@ -30,11 +30,6 @@ export function renderLoginModal(onLogin, onClose) {
           <span class="material-symbols-outlined" style="font-size:1.5rem;">close</span>
         </button>
 
-        <div class="flex items-center gap-3 mb-4">
-          <div style="height:2px;width:2rem;background:#99f7ff;flex-shrink:0;"></div>
-          <span style="font-size:10px;letter-spacing:0.2em;color:#99f7ff;font-weight:700;text-transform:uppercase;">Security Protocol</span>
-        </div>
-
         <h2 style="font-family:'Space Grotesk',sans-serif;font-size:2.25rem;font-weight:900;letter-spacing:-0.04em;color:#fff;margin-bottom:0.5rem;">ADMIN LOGIN</h2>
         <p style="font-family:'Inter',sans-serif;font-size:0.875rem;color:#adaaaa;margin-bottom:2rem;">Authorize credentials to access the management layer.</p>
 
