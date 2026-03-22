@@ -131,6 +131,7 @@ export function showEditModal({ item, categories, onUpdate }) {
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.className = 'em-submit-btn full-width';
+  submitBtn.style.cssText = 'width:auto;padding-left:2.5rem;padding-right:2.5rem;';
   submitBtn.textContent = 'UPDATE SOFTWARE';
   form.appendChild(submitBtn);
 
