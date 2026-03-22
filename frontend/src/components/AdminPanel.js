@@ -20,10 +20,7 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
     .vault-btn-primary:hover { filter: brightness(1.1); }
     .vault-btn-secondary { background: transparent; border: 1px solid rgba(153,247,255,0.3); color: #99f7ff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.45rem 0.75rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .vault-btn-secondary:hover { background: rgba(153,247,255,0.1); }
-    .category-chip { background: #262626; border-radius: 9999px; padding: 0.2rem 0.5rem 0.2rem 0.4rem; font-size: 0.7rem; color: #adaaaa; display: inline-flex; align-items: center; gap: 0.25rem; font-family: 'Inter', sans-serif; cursor: grab; border: 2px solid transparent; transition: opacity 0.2s, border-color 0.15s; }
-    .category-chip.dragging { opacity: 0.35; cursor: grabbing; }
-    .category-chip.drag-over { border-color: #99f7ff; box-shadow: 0 0 8px rgba(153,247,255,0.3); }
-    .chip-drag-handle { font-family: 'Material Symbols Outlined'; font-size: 12px; color: #484847; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; user-select: none; }
+    .category-chip { background: #262626; border-radius: 9999px; padding: 0.2rem 0.625rem; font-size: 0.7rem; color: #adaaaa; display: inline-flex; align-items: center; gap: 0.25rem; font-family: 'Inter', sans-serif; }
     .category-chip-del { background: transparent; border: none; color: #adaaaa; cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0 2px; }
     .category-chip-del:hover { color: #ff716c; }
     .chips-container { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
@@ -63,8 +60,6 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
   chipsContainer.className = 'chips-container';
   catCard.appendChild(chipsContainer);
 
-  let dragSrcIndex = null;
-
   function renderCategoryTags() {
     chipsContainer.innerHTML = '';
     if (categories.length === 0) {
@@ -74,58 +69,18 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
       chipsContainer.appendChild(empty);
       return;
     }
-    categories.forEach((cat, index) => {
+    categories.forEach(cat => {
       const chip = document.createElement('div');
       chip.className = 'category-chip';
-      chip.draggable = true;
-
-      const handle = document.createElement('span');
-      handle.className = 'chip-drag-handle';
-      handle.textContent = 'drag_indicator';
-
       const nameSpan = document.createElement('span');
       nameSpan.textContent = cat;
-
       const delBtn = document.createElement('button');
       delBtn.className = 'category-chip-del';
       delBtn.innerHTML = '&times;';
       delBtn.title = `Delete ${cat}`;
-      delBtn.draggable = false;
-      delBtn.onclick = (e) => { e.stopPropagation(); onDeleteCategory(cat); };
-
-      chip.appendChild(handle);
+      delBtn.onclick = () => onDeleteCategory(cat);
       chip.appendChild(nameSpan);
       chip.appendChild(delBtn);
-
-      chip.addEventListener('dragstart', (e) => {
-        dragSrcIndex = index;
-        chip.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', String(index));
-      });
-      chip.addEventListener('dragend', () => {
-        chip.classList.remove('dragging');
-        chipsContainer.querySelectorAll('.category-chip').forEach(c => c.classList.remove('drag-over'));
-      });
-      chip.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        if (index !== dragSrcIndex) chip.classList.add('drag-over');
-      });
-      chip.addEventListener('dragleave', (e) => {
-        if (!chip.contains(e.relatedTarget)) chip.classList.remove('drag-over');
-      });
-      chip.addEventListener('drop', (e) => {
-        e.preventDefault();
-        chip.classList.remove('drag-over');
-        if (dragSrcIndex === null || dragSrcIndex === index) return;
-        const newOrder = [...categories];
-        const [moved] = newOrder.splice(dragSrcIndex, 1);
-        newOrder.splice(index, 0, moved);
-        dragSrcIndex = null;
-        if (onReorderCategories) onReorderCategories(newOrder);
-      });
-
       chipsContainer.appendChild(chip);
     });
   }

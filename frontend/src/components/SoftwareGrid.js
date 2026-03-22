@@ -1,4 +1,4 @@
-export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit) {
+export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit, onReorderCategories) {
   if (!document.getElementById('sw-grid-styles')) {
     const style = document.createElement('style');
     style.id = 'sw-grid-styles';
@@ -119,6 +119,10 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit)
       .vault-btn:hover { border-color: #99f7ff; color: #99f7ff; }
       .vault-btn-delete:hover { border-color: #ff716c; color: #ff716c; }
       .vault-btn-edit:hover { border-color: #fbbf24; color: #fbbf24; }
+      .vault-category.dragging { opacity: 0.4; }
+      .vault-category.drag-over { box-shadow: 0 -3px 0 0 #99f7ff; }
+      .vault-drag-handle { font-family: 'Material Symbols Outlined'; font-size: 18px; color: #484847; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; cursor: grab; user-select: none; margin-right: 4px; transition: color 0.2s; }
+      .vault-drag-handle:hover { color: #99f7ff; }
       .vault-software-description {
         font-size: 0.75rem;
         color: #6b6b6b;
@@ -161,7 +165,9 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit)
   const container = document.createElement('div');
   container.className = 'vault-accordion-container';
 
-  categories.forEach(category => {
+  let dragSrcIndex = null;
+
+  categories.forEach((category, catIndex) => {
     const categoryItems = items.filter(item => item.category === category);
 
     const catSection = document.createElement('div');
@@ -173,6 +179,45 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit)
 
     const titleDiv = document.createElement('div');
     titleDiv.className = 'vault-category-title';
+
+    if (isAdmin && onReorderCategories) {
+      const dragHandle = document.createElement('span');
+      dragHandle.className = 'vault-drag-handle';
+      dragHandle.textContent = 'drag_indicator';
+      dragHandle.addEventListener('mousedown', () => { catSection.draggable = true; });
+      dragHandle.addEventListener('mouseup', () => { catSection.draggable = false; });
+      titleDiv.appendChild(dragHandle);
+
+      catSection.addEventListener('dragstart', (e) => {
+        dragSrcIndex = catIndex;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => catSection.classList.add('dragging'), 0);
+      });
+      catSection.addEventListener('dragend', () => {
+        catSection.draggable = false;
+        catSection.classList.remove('dragging');
+        container.querySelectorAll('.vault-category').forEach(c => c.classList.remove('drag-over'));
+      });
+      catSection.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (catIndex !== dragSrcIndex) catSection.classList.add('drag-over');
+      });
+      catSection.addEventListener('dragleave', (e) => {
+        if (!catSection.contains(e.relatedTarget)) catSection.classList.remove('drag-over');
+      });
+      catSection.addEventListener('drop', (e) => {
+        e.preventDefault();
+        catSection.classList.remove('drag-over');
+        if (dragSrcIndex === null || dragSrcIndex === catIndex) return;
+        const newOrder = [...categories];
+        const [moved] = newOrder.splice(dragSrcIndex, 1);
+        newOrder.splice(catIndex, 0, moved);
+        dragSrcIndex = null;
+        onReorderCategories(newOrder);
+      });
+    }
+
     const chevron = document.createElement('span');
     chevron.className = 'vault-chevron';
     chevron.textContent = 'chevron_right';

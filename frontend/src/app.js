@@ -54,7 +54,7 @@ function render() {
   if (isLoggedIn) {
     adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete, onReorderCategories);
     root.appendChild(adminPanelInstance.element);
-    root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, true, onEdit));
+    root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, true, onEdit, onReorderCategories));
   } else {
     adminPanelInstance = null;
     root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, false));
