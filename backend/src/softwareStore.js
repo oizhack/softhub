@@ -77,6 +77,16 @@ export async function deleteSoftware(id) {
     return rows[0] ? toItem(rows[0]) : null;
 }
 
+export async function updateSoftware(id, { name, description, version, category, url }) {
+    if (!name?.trim()) throw new Error("name is required");
+    if (!url?.trim()) throw new Error("url is required");
+    const { rows } = await pool.query(
+        "UPDATE software_items SET name=$1, description=$2, version=$3, category=$4, url=$5 WHERE id=$6 RETURNING *",
+        [name.trim(), description || "", version || "", category || "", url.trim(), id]
+    );
+    return rows[0] ? toItem(rows[0]) : null;
+}
+
 export async function getAllCategories() {
     const { rows } = await pool.query("SELECT name FROM categories ORDER BY name");
     return rows.map((r) => r.name);

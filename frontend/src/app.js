@@ -2,6 +2,7 @@ import { renderSoftwareGrid } from "./components/SoftwareGrid.js";
 import { renderLoginModal } from "./components/LoginModal.js";
 import { renderAdminPanel } from "./components/AdminPanel.js";
 import { showConfirm } from "./components/ConfirmModal.js";
+import { showEditModal } from "./components/EditModal.js";
 
 let allSoftware = [];
 let categories = [];
@@ -53,7 +54,7 @@ function render() {
   if (isLoggedIn) {
     adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete);
     root.appendChild(adminPanelInstance.element);
-    root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, true));
+    root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, true, onEdit));
   } else {
     adminPanelInstance = null;
     root.appendChild(renderSoftwareGrid(allSoftware, categories, onDelete, false));
@@ -100,6 +101,32 @@ async function onAdd(data) {
   } else if (res.status === 401) {
     alert("// SESSION EXPIRED");
     logout();
+  } else {
+    const err = await res.json();
+    throw new Error("// ERROR: " + (err.error || "unknown"));
+  }
+}
+
+function onEdit(item) {
+  showEditModal({ item, categories, onUpdate });
+}
+
+async function onUpdate(id, data) {
+  const res = await fetch("/api/software/" + id, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + authToken
+    },
+    body: JSON.stringify(data)
+  });
+  if (res.status === 200) {
+    await loadData();
+    render();
+  } else if (res.status === 401) {
+    alert("// SESSION EXPIRED");
+    logout();
+    throw new Error("// SESSION EXPIRED");
   } else {
     const err = await res.json();
     throw new Error("// ERROR: " + (err.error || "unknown"));
@@ -169,7 +196,80 @@ async function onDeleteCategory(name) {
   });
 }
 
+function initBubbleHeadline() {
+  const h1 = document.getElementById('hero-headline');
+  if (!h1) return;
+  const text = h1.textContent.trim();
+  h1.textContent = '';
+  let hoveredIndex = null;
+
+  const spans = text.split('').map((char, idx) => {
+    const span = document.createElement('span');
+    span.textContent = char === ' ' ? '\u00A0' : char;
+    span.style.transition = 'color 0.3s ease-in-out, text-shadow 0.3s ease-in-out';
+    span.style.color = 'rgba(153,247,255,0.6)';
+    span.addEventListener('mouseenter', () => {
+      hoveredIndex = idx;
+      updateStyles();
+    });
+    h1.appendChild(span);
+    return span;
+  });
+
+  let isHovering = false;
+
+  h1.addEventListener('mouseenter', () => { isHovering = true; });
+  h1.addEventListener('mouseleave', () => {
+    isHovering = false;
+    hoveredIndex = null;
+    updateStyles();
+  });
+
+  function startSweep() {
+    if (isHovering) return;
+    let idx = 0;
+    function step() {
+      if (isHovering) { hoveredIndex = null; updateStyles(); return; }
+      hoveredIndex = idx;
+      updateStyles();
+      idx++;
+      if (idx < spans.length + 4) {
+        setTimeout(step, 80);
+      } else {
+        setTimeout(() => { hoveredIndex = null; updateStyles(); }, 300);
+      }
+    }
+    step();
+  }
+
+  setTimeout(startSweep, 1200);
+  setInterval(startSweep, 7000);
+
+  function updateStyles() {
+    spans.forEach((span, idx) => {
+      const distance = hoveredIndex !== null ? Math.abs(hoveredIndex - idx) : null;
+      if (distance === 0) {
+        span.style.color = '#ffffff';
+        span.style.textShadow = '0 0 8px #fff, 0 0 24px #99f7ff, 0 0 48px rgba(153,247,255,0.6)';
+      } else if (distance === 1) {
+        span.style.color = '#99f7ff';
+        span.style.textShadow = '0 0 12px rgba(153,247,255,0.8), 0 0 28px rgba(153,247,255,0.4)';
+      } else if (distance === 2) {
+        span.style.color = '#99f7ff';
+        span.style.textShadow = '0 0 10px rgba(153,247,255,0.3)';
+      } else if (distance === 3) {
+        span.style.color = 'rgba(153,247,255,0.75)';
+        span.style.textShadow = 'none';
+      } else {
+        span.style.color = 'rgba(153,247,255,0.6)';
+        span.style.textShadow = 'none';
+      }
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+  initBubbleHeadline();
   const loginBtn = document.getElementById("login-btn");
   loginBtn.textContent = isLoggedIn ? "[ LOGOUT ]" : "[ LOGIN ]";
   loginBtn.addEventListener("click", () => {

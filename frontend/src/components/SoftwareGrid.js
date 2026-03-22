@@ -1,4 +1,4 @@
-export function renderSoftwareGrid(items, categories, onDelete, isAdmin) {
+export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit) {
   if (!document.getElementById('sw-grid-styles')) {
     const style = document.createElement('style');
     style.id = 'sw-grid-styles';
@@ -118,6 +118,14 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin) {
       }
       .vault-btn:hover { border-color: #99f7ff; color: #99f7ff; }
       .vault-btn-delete:hover { border-color: #ff716c; color: #ff716c; }
+      .vault-btn-edit:hover { border-color: #fbbf24; color: #fbbf24; }
+      .vault-software-description {
+        font-size: 0.75rem;
+        color: #6b6b6b;
+        font-family: 'Inter', sans-serif;
+        font-style: italic;
+        margin-top: 2px;
+      }
       .vault-btn span {
         font-family: 'Material Symbols Outlined';
         font-size: 16px;
@@ -190,17 +198,33 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin) {
 
         const info = document.createElement('div');
         info.className = 'vault-software-info';
+        info.style.alignItems = 'flex-start';
         const dot = document.createElement('div');
         dot.className = 'vault-dot';
+        dot.style.marginTop = '6px';
         const name = document.createElement('span');
         name.className = 'vault-software-name';
         name.textContent = item.name;
         const version = document.createElement('span');
         version.className = 'vault-software-version';
         version.textContent = item.version || '';
+
+        const nameVersionRow = document.createElement('div');
+        nameVersionRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        nameVersionRow.appendChild(name);
+        nameVersionRow.appendChild(version);
+
+        const infoBlock = document.createElement('div');
+        infoBlock.appendChild(nameVersionRow);
+        if (item.description) {
+          const desc = document.createElement('div');
+          desc.className = 'vault-software-description';
+          desc.textContent = item.description;
+          infoBlock.appendChild(desc);
+        }
+
         info.appendChild(dot);
-        info.appendChild(name);
-        info.appendChild(version);
+        info.appendChild(infoBlock);
 
         const actions = document.createElement('div');
         actions.className = 'vault-actions';
@@ -217,6 +241,15 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin) {
         actions.appendChild(dlBtn);
 
         if (isAdmin) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'vault-btn vault-btn-edit';
+          editBtn.title = 'Edit';
+          const editIcon = document.createElement('span');
+          editIcon.textContent = 'edit';
+          editBtn.appendChild(editIcon);
+          editBtn.addEventListener('click', () => onEdit(item));
+          actions.appendChild(editBtn);
+
           const delBtn = document.createElement('button');
           delBtn.className = 'vault-btn vault-btn-delete';
           delBtn.title = 'Delete';
