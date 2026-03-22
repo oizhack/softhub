@@ -3,7 +3,7 @@ config();
 import express from "express";
 import cors from "cors";
 import { fileURLToPath } from "url";
-import authRouter, { activeTokens } from "./routes/auth.js";
+import authRouter, { verifyToken } from "./routes/auth.js";
 import softwareRouter from "./routes/software.js";
 import { initDb, getAllCategories, addCategory, deleteCategory } from "./softwareStore.js";
 
@@ -15,7 +15,7 @@ app.use(express.json());
 
 app.use((req, _res, next) => {
     const auth = req.headers.authorization;
-    req.isAuthenticated = !!(auth && auth.startsWith("Bearer ") && activeTokens.has(auth.slice(7)));
+    req.isAuthenticated = !!(auth && auth.startsWith("Bearer ") && verifyToken(auth.slice(7)));
     next();
 });
 
