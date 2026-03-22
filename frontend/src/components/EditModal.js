@@ -59,7 +59,7 @@ export function showEditModal({ item, categories, onUpdate }) {
 
   const title = document.createElement('h2');
   title.style.cssText = "font-family:'Space Grotesk',sans-serif;font-size:1.75rem;font-weight:900;letter-spacing:-0.04em;color:#fff;margin:0;";
-  title.textContent = 'EDIT_SOFTWARE';
+  title.textContent = 'EDIT SOFTWARE';
   cardInner.appendChild(title);
 
   // Form
@@ -131,7 +131,7 @@ export function showEditModal({ item, categories, onUpdate }) {
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.className = 'em-submit-btn full-width';
-  submitBtn.textContent = 'UPDATE_SOFTWARE';
+  submitBtn.textContent = 'UPDATE SOFTWARE';
   form.appendChild(submitBtn);
 
   cardInner.appendChild(form);

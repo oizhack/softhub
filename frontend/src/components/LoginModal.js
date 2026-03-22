@@ -35,12 +35,12 @@ export function renderLoginModal(onLogin, onClose) {
           <span style="font-size:10px;letter-spacing:0.2em;color:#99f7ff;font-weight:700;text-transform:uppercase;">Security Protocol</span>
         </div>
 
-        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:2.25rem;font-weight:900;letter-spacing:-0.04em;color:#fff;margin-bottom:0.5rem;">ADMIN_LOGIN</h2>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:2.25rem;font-weight:900;letter-spacing:-0.04em;color:#fff;margin-bottom:0.5rem;">ADMIN LOGIN</h2>
         <p style="font-family:'Inter',sans-serif;font-size:0.875rem;color:#adaaaa;margin-bottom:2rem;">Authorize credentials to access the management layer.</p>
 
         <form id="login-form">
           <div style="margin-bottom:1.5rem;">
-            <label style="font-size:10px;letter-spacing:0.2em;color:#adaaaa;display:block;margin-bottom:0.5rem;margin-left:0.25rem;font-weight:700;text-transform:uppercase;">ACCESS_KEY</label>
+            <label style="font-size:10px;letter-spacing:0.2em;color:#adaaaa;display:block;margin-bottom:0.5rem;margin-left:0.25rem;font-weight:700;text-transform:uppercase;">ACCESS KEY</label>
             <div style="position:relative;">
               <span class="material-symbols-outlined" style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#adaaaa;font-size:18px;pointer-events:none;">lock</span>
               <input

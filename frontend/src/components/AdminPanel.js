@@ -53,7 +53,7 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
 
   const catHeader = document.createElement('div');
   catHeader.className = 'admin-section-header';
-  catHeader.innerHTML = '<span class="admin-section-accent"></span><h2 class="admin-section-title">NEW_CATEGORY</h2>';
+  catHeader.innerHTML = '<span class="admin-section-accent"></span><h2 class="admin-section-title">NEW CATEGORY</h2>';
   catCard.appendChild(catHeader);
 
   const chipsContainer = document.createElement('div');
@@ -94,7 +94,7 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
   catInput.placeholder = 'Category name';
   const addCatBtn = document.createElement('button');
   addCatBtn.className = 'vault-btn-secondary';
-  addCatBtn.textContent = 'COMMIT';
+  addCatBtn.textContent = 'SAVE';
   addCatBtn.onclick = () => {
     const val = catInput.value.trim();
     if (val) { onAddCategory(val); catInput.value = ''; }
@@ -109,7 +109,7 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
 
   const artifactHeader = document.createElement('div');
   artifactHeader.className = 'admin-section-header';
-  artifactHeader.innerHTML = '<span class="admin-section-accent"></span><h2 class="admin-section-title">REGISTER_SOFTWARE</h2>';
+  artifactHeader.innerHTML = '<span class="admin-section-accent"></span><h2 class="admin-section-title">REGISTER SOFTWARE</h2>';
   artifactCard.appendChild(artifactHeader);
 
   const form = document.createElement('form');
@@ -204,7 +204,7 @@ export function renderAdminPanel(onAdd, onLogout, categories = [], onAddCategory
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.className = 'vault-btn-primary full-width';
-  submitBtn.textContent = 'ADD_SOFTWARE';
+  submitBtn.textContent = 'ADD SOFTWARE';
   form.appendChild(submitBtn);
 
   form.onsubmit = async (e) => {
