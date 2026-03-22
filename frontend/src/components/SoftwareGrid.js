@@ -126,6 +126,13 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit)
         font-style: italic;
         margin-top: 2px;
       }
+      .vault-software-updated {
+        font-size: 0.65rem;
+        color: #484847;
+        font-family: monospace;
+        margin-top: 3px;
+        letter-spacing: 0.03em;
+      }
       .vault-btn span {
         font-family: 'Material Symbols Outlined';
         font-size: 16px;
@@ -221,6 +228,13 @@ export function renderSoftwareGrid(items, categories, onDelete, isAdmin, onEdit)
           desc.className = 'vault-software-description';
           desc.textContent = item.description;
           infoBlock.appendChild(desc);
+        }
+        if (item.updatedAt) {
+          const updated = document.createElement('div');
+          updated.className = 'vault-software-updated';
+          const d = new Date(item.updatedAt);
+          updated.textContent = 'updated ' + d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          infoBlock.appendChild(updated);
         }
 
         info.appendChild(dot);

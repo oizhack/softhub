@@ -27,6 +27,9 @@ export async function initDb() {
             created_at TIMESTAMPTZ DEFAULT NOW()
         )
     `);
+    await pool.query(`
+        ALTER TABLE software_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ
+    `);
     const { rowCount } = await pool.query("SELECT 1 FROM categories LIMIT 1");
     if (rowCount === 0) {
         await pool.query(`INSERT INTO categories VALUES ('Developer Tools'), ('Security'), ('Utilities')`);
@@ -50,6 +53,7 @@ const toItem = (r) => ({
     category: r.category,
     url: r.url,
     createdAt: r.created_at,
+    updatedAt: r.updated_at || null,
 });
 
 export async function getAllSoftware() {
@@ -81,7 +85,7 @@ export async function updateSoftware(id, { name, description, version, category,
     if (!name?.trim()) throw new Error("name is required");
     if (!url?.trim()) throw new Error("url is required");
     const { rows } = await pool.query(
-        "UPDATE software_items SET name=$1, description=$2, version=$3, category=$4, url=$5 WHERE id=$6 RETURNING *",
+        "UPDATE software_items SET name=$1, description=$2, version=$3, category=$4, url=$5, updated_at=NOW() WHERE id=$6 RETURNING *",
         [name.trim(), description || "", version || "", category || "", url.trim(), id]
     );
     return rows[0] ? toItem(rows[0]) : null;

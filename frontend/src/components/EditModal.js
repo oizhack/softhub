@@ -124,6 +124,21 @@ export function showEditModal({ item, categories, onUpdate }) {
     form.appendChild(group);
   });
 
+  if (item.updatedAt) {
+    const modifiedGroup = document.createElement('div');
+    modifiedGroup.className = 'em-form-group full-width';
+    const modifiedLabel = document.createElement('label');
+    modifiedLabel.className = 'em-label';
+    modifiedLabel.textContent = 'Last Modified';
+    const d = new Date(item.updatedAt);
+    const modifiedVal = document.createElement('div');
+    modifiedVal.style.cssText = 'font-family:monospace;font-size:0.8rem;color:#6b6b6b;padding:0.5rem 0.75rem;background:#0d0d0d;border-radius:0.375rem;border:1px solid rgba(72,72,71,0.2);';
+    modifiedVal.textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + '  ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    modifiedGroup.appendChild(modifiedLabel);
+    modifiedGroup.appendChild(modifiedVal);
+    form.appendChild(modifiedGroup);
+  }
+
   const errorMsg = document.createElement('p');
   errorMsg.className = 'em-error full-width';
   form.appendChild(errorMsg);
