@@ -52,7 +52,8 @@ function render() {
     loginBtn.textContent = isLoggedIn ? "[ LOGOUT ]" : "[ LOGIN ]";
   }
 
-  root.appendChild(renderYoutubeDownloader());
+  const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (isLocalhost) root.appendChild(renderYoutubeDownloader());
 
   if (isLoggedIn) {
     adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete, onReorderCategories);

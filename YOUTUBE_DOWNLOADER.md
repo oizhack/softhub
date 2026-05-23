@@ -1,12 +1,16 @@
 # YouTube Downloader
 
-Public-facing feature that lets any visitor paste a YouTube URL and download the
-video as MP4 (best available combined audio+video stream).
+**Localhost-only feature.** Paste a YouTube URL, get the MP4 as a browser
+download. The UI is only rendered when the page is served from `localhost`
+or `127.0.0.1` — it does not appear on the Vercel-hosted site (see the
+"Not Vercel-safe" section below for why).
 
 ## How it works
 
 **Frontend** — `frontend/src/components/YoutubeDownloader.js`
-- Renders a single-row card at the top of the page (above the software grid).
+- Renders a single-row card at the top of the page (above the software grid),
+  but **only when `window.location.hostname` is `localhost` or `127.0.0.1`**.
+  Gated in `frontend/src/app.js`.
 - URL input + `[ DOWNLOAD ]` button. Enter key also triggers download.
 - Light client-side regex check that the URL looks like YouTube.
 - On click: creates a hidden `<a download href="/api/youtube/download?url=...">`,
@@ -15,15 +19,17 @@ video as MP4 (best available combined audio+video stream).
 
 **Backend** — `backend/src/routes/youtube.js`
 - `GET /api/youtube/download?url=<encoded>`
-- Validates URL via `ytdl.validateURL`.
-- `ytdl.getInfo` → grabs `videoDetails.title`, sanitizes for filename
-  (strips `<>:"/\|?*` and control chars, trims to 120 chars).
-- Sets `Content-Type: video/mp4` and `Content-Disposition: attachment;
-  filename="..."; filename*=UTF-8''...` for Unicode-safe filenames.
-- Pipes `ytdl.downloadFromInfo(info, { quality: "highest",
-  filter: "audioandvideo" })` straight into the response.
+- Validates URL, extracts the 11-char video ID.
+- Uses `youtubei.js` (`Innertube.create()`, `getInfo`, `download`) which talks
+  to YouTube's InnerTube API rather than scraping the web player.
+- Pipes the resulting Web ReadableStream (converted via `Readable.fromWeb`)
+  into the Express response, after setting `Content-Type: video/mp4` and a
+  UTF-8-safe `Content-Disposition`.
 - Stream errors are logged and either return 502 (if headers not sent) or
   destroy the response.
+
+The route is left mounted in production but is harmless because the UI that
+calls it is hidden. Any direct curl from a datacenter IP just gets a 502.
 
 No authentication — the route is public, matching the rest of the read-only
 software listing.
@@ -97,15 +103,27 @@ Trade-off: the entire video is held in browser memory before saving. Fine for
 typical videos, ugly for multi-GB downloads, and the browser shows no progress
 bar during the fetch.
 
-### 5. Not Vercel-safe
+### 5. Not Vercel-safe — observed in production
 
-The current implementation streams arbitrarily large responses through Express.
-That's fine locally, but **Vercel's serverless functions have a 10-second
-timeout on Hobby plans** (and payload/duration limits even on Pro). Anything
-beyond a short clip will be cut off if you deploy this route to Vercel.
+This was tested live on Vercel. Two compounding problems:
 
-If you ever want to host it: don't. Or move that single route to a long-running
-worker (Fly, Railway, a small VM) and keep the rest on Vercel.
+1. **YouTube blocks datacenter IPs.** Vercel runs on AWS, and YouTube refuses
+   to return video info to AWS / GCP / Azure ranges. With `ytdl-core` this
+   surfaced as a signature decipher error; with `youtubei.js` it surfaces as
+   a `VideoUnavailableError`. The video is not actually unavailable — it's an
+   IP-block disguised as one. This is the *primary* reason this feature
+   doesn't work in production, regardless of library choice.
+2. **Vercel Hobby timeout (10s) + payload cap (4.5MB).** Even if YouTube
+   allowed the request, anything longer than a short clip would be cut off.
+
+This is why the UI is gated to `localhost` in `app.js`. From your home IP
+the request looks like a normal browser fetch and YouTube serves it; from
+Vercel it does not.
+
+If you ever want to host it for real, options are: (a) route requests
+through a residential proxy, (b) feed YouTube cookies via env var (fragile,
+they expire), or (c) move the route to a small VM with a residential-ish
+IP and keep the rest on Vercel.
 
 ### 6. Filename safety
 
