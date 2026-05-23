@@ -3,6 +3,7 @@ import { renderLoginModal } from "./components/LoginModal.js";
 import { renderAdminPanel } from "./components/AdminPanel.js";
 import { showConfirm } from "./components/ConfirmModal.js";
 import { showEditModal } from "./components/EditModal.js";
+import { renderYoutubeDownloader } from "./components/YoutubeDownloader.js";
 
 let allSoftware = [];
 let categories = [];
@@ -50,6 +51,8 @@ function render() {
   if (loginBtn) {
     loginBtn.textContent = isLoggedIn ? "[ LOGOUT ]" : "[ LOGIN ]";
   }
+
+  root.appendChild(renderYoutubeDownloader());
 
   if (isLoggedIn) {
     adminPanelInstance = renderAdminPanel(onAdd, logout, categories, onAddCategory, onDeleteCategory, allSoftware, onDelete, onReorderCategories);

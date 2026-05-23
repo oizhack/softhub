@@ -5,6 +5,7 @@ import cors from "cors";
 import { fileURLToPath } from "url";
 import authRouter, { verifyToken } from "./routes/auth.js";
 import softwareRouter from "./routes/software.js";
+import youtubeRouter from "./routes/youtube.js";
 import { initDb, getAllCategories, addCategory, deleteCategory, updateCategoryOrder } from "./softwareStore.js";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use((req, _res, next) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/software", softwareRouter);
+app.use("/api/youtube", youtubeRouter);
 app.get("/api/categories", async (_req, res) => {
     res.json(await getAllCategories());
 });
