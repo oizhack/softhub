@@ -45,17 +45,16 @@ feature is fine for **local, personal use**. Do not deploy it publicly —
 besides the TOS issue, you'd be paying the bandwidth bill and potentially
 hosting copyrighted content.
 
-### 2. `ytdl-core` is fragile
+### 2. Library choice: `youtubei.js`
 
-YouTube periodically changes its player code (signature ciphers, manifest
-formats). Every time they do, every ytdl-core-family library breaks until the
-maintainers ship a patch.
+We use **`youtubei.js`** (LuanRT/YouTube.js). It talks to YouTube's
+InnerTube API (the same API the mobile/TV apps use) instead of scraping
+the web player and deciphering signatures. That makes it materially more
+resilient to YouTube's frequent player updates.
 
-- We use **`@distube/ytdl-core`**, a community fork that historically ships
-  fixes faster than the original `ytdl-core` (which is no longer actively
-  maintained).
-- If downloads suddenly stop working with a signature/decipher error: first
-  try `npm update @distube/ytdl-core --workspace=backend`.
+History note: this project originally used `@distube/ytdl-core`. It broke
+within hours of going live with a signature decipher error — exactly the
+fragility risk that's well-known about the ytdl-core family.
 
 ### 3. Robust fallback: `yt-dlp`
 
